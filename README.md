@@ -5,13 +5,13 @@ An Elixir library to easily pull company information from the SOAP web service o
 
 ## Installation
 
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed
+The package is [available in Hex](https://hexdocs.pm/vatchex_greece) and can be installed
 by adding `vatchex_greece` to your list of dependencies in `mix.exs`:
 
 ```elixir
 def deps do
   [
-    {:vatchex_greece, "~> 0.5.1"}
+    {:vatchex_greece, "~> 0.5.2"}
   ]
 end
 ```
@@ -36,7 +36,7 @@ The docs can be found at <https://hexdocs.pm/vatchex_greece>.
 ## TODO
 
 - [x] Implement core functionality
-- [ ] Publish on hex.pm
+- [x] Publish on hex.pm
 - [ ] Implement testing functions
 - [ ] Parse company activities and clean them up
 - [ ] Set up CI
