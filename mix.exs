@@ -4,7 +4,7 @@ defmodule VatchexGreece.MixProject do
   def project do
     [
       app: :vatchex_greece,
-      version: "0.5.0",
+      version: "0.5.1",
       elixir: "~> 1.14",
       start_permanent: Mix.env() == :prod,
       description: description(),
@@ -34,7 +34,7 @@ defmodule VatchexGreece.MixProject do
     [
       files: ["lib", "mix.exs", "README*", "LICENSE*"],
       maintainers: ["Isaak Tsalicoglou"],
-      licenses: ["Apache 2.0"],
+      licenses: ["Apache-2.0"],
       links: %{"GitHub" => "https://github.com/waseigo/vatchex_greece"}
     ]
   end
@@ -51,8 +51,6 @@ defmodule VatchexGreece.MixProject do
     [
       # {:dep_from_hexpm, "~> 0.3.0"},
       {:soap, "~> 1.0"},
-      {:xml_builder, "~> 2.1.1"},
-      {:elixir_map_to_xml, "~> 0.1.0"},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.27", only: :dev, runtime: false},
     ]
