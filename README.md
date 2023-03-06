@@ -2,10 +2,11 @@
 
 An Elixir library to easily pull company information from the SOAP web service of the Greek General Secretariat of Information Systems for Public Administration (GSIS) using the VAT ID (Αριθμός Φορολογικού Μητρώου, abbreviated as "ΑΦΜ" or "Α.Φ.Μ.").
 
+Note: this project is a volunteer effort and not in any way affiliated with the data service providers of the Greek Ministry of Finance.
 
 ## Installation
 
-The package is [available in Hex](https://hexdocs.pm/vatchex_greece) and can be installed
+The package is [available in Hex](https://hex.pm/packages/vatchex_greece) and can be installed
 by adding `vatchex_greece` to your list of dependencies in `mix.exs`:
 
 ```elixir
