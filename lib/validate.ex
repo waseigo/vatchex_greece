@@ -41,27 +41,118 @@ defmodule VatchexGreece.Validate do
     |> Integer.mod(10)
   end
 
-  defp only_digits?(vat_id) do
-    vat_id
-    |> Integer.parse()
-    |> Kernel.!=(:error)
+  @doc """
+  Check that the passed VAT ID only contains digits.
+  """
+  def check_only_digits(vat_id) do
+    c =
+      vat_id
+      |> Integer.parse()
+      |> Kernel.!=(:error)
+
+    if c do
+      {:ok, vat_id}
+    else
+      {:error, "Error: VAT ID #{vat_id} does not contain only digits."}
+    end
   end
 
-  defp proper_length?(vat_id) do
-    vat_id
-    |> String.length()
-    |> Kernel.==(9)
+  @doc """
+  Unsafe check that the passed VAT ID only contains digits.
+  """
+  def check_only_digits!(vat_id) do
+    case check_only_digits(vat_id) do
+      {:ok, vat_id} -> vat_id
+      {:error, message} -> raise RuntimeError, message: message
+    end
   end
 
-  defp checksum_ok?(vat_id) do
+  @doc """
+  Boolean check that the passed VAT ID only contains digits.
+  """
+  def only_digits?(vat_id) do
+    case check_only_digits(vat_id) do
+      {:ok, _} -> true
+      _ -> false
+    end
+  end
+
+  @doc """
+  Check that the passed VAT ID has the proper length.
+  """
+  def check_proper_length(vat_id) do
+    c =
+      vat_id
+      |> String.length()
+      |> Kernel.==(9)
+
+    if c do
+      {:ok, vat_id}
+    else
+      {:error,
+       "Error: VAT ID #{vat_id} has an incorrect length (not 9 digits)."}
+    end
+  end
+
+  @doc """
+  Unsafe check that the passed VAT ID has the proper length.
+  """
+  def check_proper_length!(vat_id) do
+    case check_proper_length(vat_id) do
+      {:ok, vat_id} -> vat_id
+      {:error, message} -> raise RuntimeError, message: message
+    end
+  end
+
+  @doc """
+  Boolean check that the passed VAT ID has the proper length.
+  """
+  def proper_length?(vat_id) do
+    case check_proper_length(vat_id) do
+      {:ok, _} -> true
+      _ -> false
+    end
+  end
+
+  @doc """
+  Check that the passed VAT ID contains the correct checksum digit.
+  """
+  def check_correct_checksum(vat_id) do
     last_digit = String.slice(vat_id, -1..-1)
 
-    vat_id
-    |> minimize()
-    |> String.slice(0, 9 - 1)
-    |> calculate_check_digit()
-    |> to_string()
-    |> Kernel.==(last_digit)
+    c =
+      vat_id
+      |> minimize()
+      |> String.slice(0, 9 - 1)
+      |> calculate_check_digit()
+      |> to_string()
+      |> Kernel.==(last_digit)
+
+    if c do
+      {:ok, vat_id}
+    else
+      {:error, "Error: VAT ID #{vat_id} checksum mismatch."}
+    end
+  end
+
+  @doc """
+  Unsafe check that the passed VAT ID contains the correct checksum digit.
+  """
+  def check_correct_checksum!(vat_id) do
+    case check_correct_checksum(vat_id) do
+      {:ok, vat_id} -> vat_id
+      {:error, message} -> raise RuntimeError, message: message
+    end
+  end
+
+  @doc """
+  Boolean check that the passed VAT ID contains the correct checksum digit.
+  """
+  def correct_checksum?(vat_id) do
+    case check_correct_checksum(vat_id) do
+      {:ok, _} -> true
+      _ -> false
+    end
   end
 
   @doc """
@@ -69,11 +160,11 @@ defmodule VatchexGreece.Validate do
   length (9 total, and only digits), where the last digit is equal to the checksum
   calculate from the first 8 digits.
   """
-  def is_valid?(vat_id) do
+  def valid?(vat_id) do
     checks = [
       &only_digits?/1,
       &proper_length?/1,
-      &checksum_ok?/1
+      &correct_checksum?/1
     ]
 
     false not in Enum.map(checks, fn func -> func.(vat_id) end)
