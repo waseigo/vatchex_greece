@@ -9,28 +9,28 @@ defmodule VatchexGreece.Request do
   """
   @moduledoc since: "0.2.0"
 
-  @settings Application.compile_env(:vatchex_greece, :globals) |> Map.new()
-  @xml_template File.read!(@settings.xml_template)
+  @gsis_wsdl_url "https://www1.gsis.gr/webtax2/wsgsis/RgWsPublic/RgWsPublicPort?wsdl"
 
   @doc """
-  Prepare the request's XML template based on the settings (username, password,
-  VAT ID you call from) and the input (VAT ID you call for).
+  Prepare the request's XML template based on the VAT ID you call for),
+  and authentication settings (username, password, VAT ID you call from).
   """
-  def prepare(afmCalledFor) do
-    EEx.eval_string(@xml_template,
-      username: @settings.username,
-      password: @settings.password,
-      afmCalledBy: @settings.afmCalledBy,
-      afmCalledFor: afmCalledFor
-    )
-  end
+  # statically compile the XML request template and create a function to customize it
+  EEx.function_from_file(
+    :def,
+    :prepare,
+    "lib/request.xml.eex",
+    [:afm_called_for, :username, :password, :afm_called_by]
+  )
 
   @doc """
   POST the XML request with proper headers to the SOAP web service.
   """
   def post(xml) do
-    wsdl_url = @settings.gsis_wsdl_url
-    headers = %{"Content-Type" => "application/soap+xml"}
-    HTTPoison.post(wsdl_url, xml, headers)
+    HTTPoison.post(
+      @gsis_wsdl_url,
+      xml,
+      %{"Content-Type" => "application/soap+xml"}
+    )
   end
 end

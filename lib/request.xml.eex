@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:SOAP-ENC="http://schemas.xmlsoap.org/soap/encoding/" xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd" xmlns:ns0="http://schemas.xmlsoap.org/soap/encoding/" xmlns:ns1="http://gr/gsis/rgwspublic/RgWsPublic.wsdl" xmlns:ns2="http://schemas.xmlsoap.org/soap/envelope/" SOAP-ENV:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+   <SOAP-ENV:Header>
+      <wsse:Security mustUnderstand="true">
+         <wsse:UsernameToken>
+            <wsse:Username><%= username %></wsse:Username>
+            <wsse:Password Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordText"><%= password %></wsse:Password>
+         </wsse:UsernameToken>
+      </wsse:Security>
+   </SOAP-ENV:Header>
+   <ns2:Body>
+      <ns1:rgWsPublicAfmMethod>
+         <RgWsPublicInputRt_in>
+            <ns1:afmCalledBy><%= afm_called_by %></ns1:afmCalledBy>
+            <ns1:afmCalledFor><%= afm_called_for %></ns1:afmCalledFor>
+         </RgWsPublicInputRt_in>
+         <RgWsPublicBasicRt_out>
+            <ns1:afm xsi:nil="true"/>
+            <ns1:stopDate xsi:nil="true"/>
+            <ns1:postalAddressNo xsi:nil="true"/>
+            <ns1:doyDescr xsi:nil="true"/>
+            <ns1:doy xsi:nil="true"/>
+            <ns1:onomasia xsi:nil="true"/>
+            <ns1:legalStatusDescr xsi:nil="true"/>
+            <ns1:registDate xsi:nil="true"/>
+            <ns1:deactivationFlag xsi:nil="true"/>
+            <ns1:deactivationFlagDescr xsi:nil="true"/>
+            <ns1:postalAddress xsi:nil="true"/>
+            <ns1:firmFlagDescr xsi:nil="true"/>
+            <ns1:commerTitle xsi:nil="true"/>
+            <ns1:postalAreaDescription xsi:nil="true"/>
+            <ns1:INiFlagDescr xsi:nil="true"/>
+            <ns1:postalZipCode xsi:nil="true"/>
+         </RgWsPublicBasicRt_out>
+         <arrayOfRgWsPublicFirmActRt_out></arrayOfRgWsPublicFirmActRt_out>
+         <pCallSeqId_out>0</pCallSeqId_out>
+         <pErrorRec_out>
+            <ns1:errorDescr xsi:nil="true"/>
+            <ns1:errorCode xsi:nil="true"/>
+         </pErrorRec_out>
+      </ns1:rgWsPublicAfmMethod>
+   </ns2:Body>
+</SOAP-ENV:Envelope>
