@@ -3,34 +3,39 @@ defmodule VatchexGreece.Process do
   # SPDX-License-Identifier: Apache-2.0
 
   @moduledoc """
-  Process the response and convert it to a map.
+  Process the response and convert it to a map within a response tuple.
   """
   @moduledoc since: "0.3.0"
 
   @doc """
-  Convert the response to a map if valid, otherwise return an empty map.
+  Convert the response to {:ok, map} if valid, otherwise return {:error, %{}}.
   """
   def to_map(response) do
     {status, result} = response
 
     case status do
       :ok ->
-        result
-        |> rename_all_keys()
-        |> Soap.Response.Parser.parse(:whatever)
-        |> Map.fetch!(:rgWsPublicAfmMethodResponse)
-        |> Map.delete(:pCallSeqId_out)
-        |> Map.delete(:pErrorRec_out)
+        {:ok,
+         result
+         |> rename_all_keys()
+         |> Soap.Response.Parser.parse(:whatever)
+         |> Map.fetch!(:rgWsPublicAfmMethodResponse)
+         |> Map.delete(:pCallSeqId_out)
+         |> Map.delete(:pErrorRec_out)}
 
       :error_wrong_afm ->
-        result
-        |> rename_all_keys()
-        |> Soap.Response.Parser.parse(:whatever)
-        |> Map.fetch!(:rgWsPublicAfmMethodResponse)
-        |> Map.fetch!(:pErrorRec_out)
+        {:error,
+         result
+         |> rename_all_keys()
+         |> Soap.Response.Parser.parse(:whatever)
+         |> Map.fetch!(:rgWsPublicAfmMethodResponse)
+         |> Map.fetch!(:pErrorRec_out)}
 
-      :error_other ->
-        %{}
+      :error_not_authenticated ->
+        {:error, "Error: not authenticated."}
+
+      error ->
+        {error, %{}}
     end
   end
 
@@ -40,17 +45,22 @@ defmodule VatchexGreece.Process do
   def from_request(response) do
     case response do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
-        if String.contains?(body, "RG_WS_PUBLIC_WRONG_AFM") do
-          {:error_wrong_afm, body}
-        else
-          {:ok, body}
+        cond do
+          String.contains?(body, "RG_WS_PUBLIC_WRONG_AFM") ->
+            {:error_wrong_afm, body}
+
+          String.contains?(body, "NOT_AUTHENTICATED") ->
+            {:error_not_authenticated, body}
+
+          true ->
+            {:ok, body}
         end
 
-      {:ok, %HTTPoison.Response{body: body}} ->
-        {:error_other, body}
+      {:ok, %HTTPoison.Response{status_code: code, body: body}} ->
+        {String.to_atom("error_" <> Integer.to_string(code)), body}
 
       _ ->
-        response
+        {:error_other, response}
     end
   end
 
