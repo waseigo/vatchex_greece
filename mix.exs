@@ -4,7 +4,7 @@ defmodule VatchexGreece.MixProject do
   def project do
     [
       app: :vatchex_greece,
-      version: "0.5.2",
+      version: "0.6.0",
       elixir: "~> 1.14",
       start_permanent: Mix.env() == :prod,
       description: description(),
@@ -14,7 +14,7 @@ defmodule VatchexGreece.MixProject do
       # Docs
       name: "VatchexGreece",
       source_url: "https://github.com/waseigo/vatchex_greece",
-      homepage_url: "https://github.com/waseigo/vatchex_greece",
+      homepage_url: "https://blog.waseigo.com/tags/vatchex_greece/",
       docs: [
         # The main page in the docs
         main: "VatchexGreece",
