@@ -1,3 +1,5 @@
+<img src="./logo.png" width="100" height="100">
+
 # VatchexGreece
 
 An Elixir library to easily pull company information from the SOAP web service of the Greek General Secretariat of Information Systems for Public Administration (GSIS) using the VAT ID (Αριθμός Φορολογικού Μητρώου, abbreviated as "ΑΦΜ" or "Α.Φ.Μ.").
