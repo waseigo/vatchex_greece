@@ -1,7 +1,7 @@
-defmodule VatchexGreece.Fixes do
-  # SPDX-FileCopyrightText: 2023 Isaak Tsalicoglou <isaak@waseigo.com>
-  # SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: 2023 Isaak Tsalicoglou <isaak@waseigo.com>
+# SPDX-License-Identifier: Apache-2.0
 
+defmodule VatchexGreece.Fixes do
   @moduledoc """
   Fix/correct some elements of the response map.
   """

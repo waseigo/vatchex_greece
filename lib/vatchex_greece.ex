@@ -1,8 +1,12 @@
+# SPDX-FileCopyrightText: 2023 Isaak Tsalicoglou <isaak@waseigo.com>
+# SPDX-License-Identifier: Apache-2.0
+
 defmodule VatchexGreece do
   require EEx
 
   @moduledoc """
-  Documentation for `VatchexGreece`.
+  Main module of `VatchexGreece` that contains high-level functions that the
+  user typically will interact with.
   """
   @moduledoc since: "0.1.0"
 

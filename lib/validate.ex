@@ -1,7 +1,7 @@
-defmodule VatchexGreece.Validate do
-  # SPDX-FileCopyrightText: 2023 Isaak Tsalicoglou <isaak@waseigo.com>
-  # SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: 2023 Isaak Tsalicoglou <isaak@waseigo.com>
+# SPDX-License-Identifier: Apache-2.0
 
+defmodule VatchexGreece.Validate do
   @moduledoc """
   Module with functions used to validate Greek VAT IDs.
   """

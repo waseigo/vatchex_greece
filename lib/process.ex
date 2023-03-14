@@ -1,7 +1,7 @@
-defmodule VatchexGreece.Process do
-  # SPDX-FileCopyrightText: 2023 Isaak Tsalicoglou <isaak@waseigo.com>
-  # SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: 2023 Isaak Tsalicoglou <isaak@waseigo.com>
+# SPDX-License-Identifier: Apache-2.0
 
+defmodule VatchexGreece.Process do
   @moduledoc """
   Process the response and convert it to a map within a response tuple.
   """
