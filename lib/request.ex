@@ -9,7 +9,7 @@ defmodule VatchexGreece.Request do
   """
   @moduledoc since: "0.2.0"
 
-  @gsis_wsdl_url "https://www1.gsis.gr/webtax2/wsgsis/RgWsPublic/RgWsPublicPort?wsdl"
+  @gsis_wsdl_url "https://www1.gsis.gr/wsaade/RgWsPublic2/RgWsPublic2?wsdl"
 
   @doc """
   Prepare the request's XML template based on the VAT ID you call for),
