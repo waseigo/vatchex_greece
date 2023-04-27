@@ -17,7 +17,6 @@ defmodule VatchexGreece.Process do
       :ok ->
         {:ok,
          result
-         |> rename_all_keys()
          |> Soap.Response.Parser.parse(:whatever)
          |> Map.fetch!(:rgWsPublicAfmMethodResponse)
          |> Map.delete(:pCallSeqId_out)
@@ -26,7 +25,6 @@ defmodule VatchexGreece.Process do
       :error_wrong_afm ->
         {:error,
          result
-         |> rename_all_keys()
          |> Soap.Response.Parser.parse(:whatever)
          |> Map.fetch!(:rgWsPublicAfmMethodResponse)
          |> Map.fetch!(:pErrorRec_out)}
@@ -64,9 +62,4 @@ defmodule VatchexGreece.Process do
     end
   end
 
-  defp rename_all_keys(response) do
-    response
-    |> String.replace("<m:", "<")
-    |> String.replace("</m:", "</")
-  end
 end
