@@ -7,59 +7,80 @@ defmodule VatchexGreece.Process do
   """
   @moduledoc since: "0.3.0"
 
+  import SweetXml
+
   @doc """
-  Convert the response to {:ok, map} if valid, otherwise return {:error, %{}}.
+  Extract strings of attribute within the XML of the response body.
   """
-  def to_map(response) do
-    {status, result} = response
+  @doc since: "0.7.0"
+  def extract_string(xml, attribute) do
+    s =
+      xml
+      |> xpath(~x"//#{attribute}/text()"s)
+      |> String.trim()
+      |> String.replace("\"", "")
+      |> String.split()
+      |> Enum.join(" ")
 
-    case status do
-      :ok ->
-        {:ok,
-         result
-         |> Soap.Response.Parser.parse(:whatever)
-         |> Map.fetch!(:rgWsPublicAfmMethodResponse)
-         |> Map.delete(:pCallSeqId_out)
-         |> Map.delete(:pErrorRec_out)}
-
-      :error_wrong_afm ->
-        {:error,
-         result
-         |> Soap.Response.Parser.parse(:whatever)
-         |> Map.fetch!(:rgWsPublicAfmMethodResponse)
-         |> Map.fetch!(:pErrorRec_out)}
-
-      :error_not_authenticated ->
-        {:error, "Error: not authenticated."}
-
-      error ->
-        {error, %{}}
+    if s == "" do
+      nil
+    else
+      s
     end
   end
 
   @doc """
-  Handle any errors based on the HTTP response content.
+  Extract list of activities from the XML of the response body and convert the resulting map to a list of `NACEactivity` structs.
   """
-  def from_request(response) do
-    case response do
-      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
-        cond do
-          String.contains?(body, "RG_WS_PUBLIC_WRONG_AFM") ->
-            {:error_wrong_afm, body}
-
-          String.contains?(body, "NOT_AUTHENTICATED") ->
-            {:error_not_authenticated, body}
-
-          true ->
-            {:ok, body}
-        end
-
-      {:ok, %HTTPoison.Response{status_code: code, body: body}} ->
-        {String.to_atom("error_" <> Integer.to_string(code)), body}
-
-      _ ->
-        {:error_other, response}
+  @doc since: "0.7.0"
+  def extract_activities(xml) do
+    map_to_nace = fn %{
+                       firm_act_code: code,
+                       firm_act_kind: prio,
+                       firm_act_descr: descr,
+                       firm_act_kind_descr: prio_text
+                     } ->
+      %NACEactivity{code: code, prio: prio, descr: descr, prio_text: prio_text}
     end
+
+    xml
+    |> SweetXml.xpath(~x"//item"l,
+      firm_act_code: ~x"./firm_act_code/text()"s,
+      firm_act_descr: ~x"./firm_act_descr/text()"s,
+      firm_act_kind: ~x"./firm_act_kind/text()"i,
+      firm_act_kind_descr: ~x"./firm_act_kind_descr/text()"s
+    )
+    |> Enum.map(&map_to_nace.(&1))
   end
 
+  @doc """
+  Parse the XML of the response body and update the `Results` struct.
+  """
+  @doc since: "0.7.0"
+  def parse({:ok, %Results{response: response, data: data} = input}) do
+    strings_to_extract =
+      data
+      |> Map.keys()
+      |> List.delete(:__struct__)
+      |> List.delete(:activities)
+
+    data_map =
+      strings_to_extract
+      |> Map.new(fn k ->
+        {k, VatchexGreece.Process.extract_string(response.body, k)}
+      end)
+
+    data_struct = struct(GSISdata, data_map)
+
+    data_struct = %GSISdata{
+      data_struct
+      | activities: extract_activities(response.body)
+    }
+
+    {:ok, %Results{input | data: data_struct}}
+  end
+
+  def parse({:error, input}) do
+    {:error, input}
+  end
 end
