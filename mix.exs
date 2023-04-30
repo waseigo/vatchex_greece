@@ -18,7 +18,7 @@ defmodule VatchexGreece.MixProject do
       docs: [
         # The main page in the docs
         main: "VatchexGreece",
-        logo: "./logo.png",
+        logo: "./assets/logo.png",
         extras: ["README.md"]
       ]
     ]
