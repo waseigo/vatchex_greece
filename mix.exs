@@ -4,7 +4,7 @@ defmodule VatchexGreece.MixProject do
   def project do
     [
       app: :vatchex_greece,
-      version: "0.6.0",
+      version: "0.7.0",
       elixir: "~> 1.14",
       start_permanent: Mix.env() == :prod,
       description: description(),
@@ -26,7 +26,7 @@ defmodule VatchexGreece.MixProject do
 
   defp description do
     """
-    An Elixir library to easily pull company information from the SOAP web service of the Greek General Secretariat of Information Systems for Public Administration (GSIS) using the VAT ID (Αριθμός Φορολογικού Μητρώου, abbreviated as "ΑΦΜ" or "Α.Φ.Μ.").
+    An Elixir library to easily pull company information from the `RgWsPublic2` SOAP web service (new since 2023-04-21) of the Greek General Secretariat of Information Systems for Public Administration (GSIS) using the VAT ID (Αριθμός Φορολογικού Μητρώου, abbreviated as "ΑΦΜ" or "Α.Φ.Μ.").
     """
   end
 
@@ -42,16 +42,15 @@ defmodule VatchexGreece.MixProject do
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
-      extra_applications: [:logger, :eex, :soap]
+      extra_applications: [:logger, :eex]
     ]
   end
 
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      # {:dep_from_hexpm, "~> 0.3.0"},
-      # added for parsing SOAP response
-      {:soap, "~> 1.0"},
+      {:sweet_xml, "~> 0.7.3"},
+      {:httpoison, "~> 2.0"},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.27", only: :dev, runtime: false}
     ]
