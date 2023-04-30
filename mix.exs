@@ -26,7 +26,7 @@ defmodule VatchexGreece.MixProject do
 
   defp description do
     """
-    An Elixir library to easily pull company information from the `RgWsPublic2` SOAP web service (new since 2023-04-21) of the Greek General Secretariat of Information Systems for Public Administration (GSIS) using the VAT ID (Αριθμός Φορολογικού Μητρώου, abbreviated as "ΑΦΜ" or "Α.Φ.Μ.").
+    An Elixir library to easily pull company information from the `RgWsPublic2` SOAP web service (new since 2023-04-20) of the Greek General Secretariat of Information Systems for Public Administration (GSIS) using the VAT ID (Αριθμός Φορολογικού Μητρώου, abbreviated as "ΑΦΜ" or "Α.Φ.Μ.").
     """
   end
 
