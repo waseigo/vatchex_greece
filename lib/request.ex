@@ -45,39 +45,27 @@ defmodule VatchexGreece.Request do
   """
   @doc since: "0.5.0"
   def post({:ok, %Results{request: xml, errors: errors} = input}) do
-    response =
-      HTTPoison.post(
-        @gsis_wsdl_url,
-        xml,
-        %{"Content-Type" => "application/soap+xml"}
-      )
+    params = [
+      url: @gsis_wsdl_url,
+      method: :post,
+      body: xml
+    ]
 
-    case response do
-      {:error, http_response} ->
-        errors =
-          Map.put(
-            errors,
-            :http_request_error,
-            "HTTP request error."
-          )
+    req =
+      params
+      |> Req.new()
+      |> Req.Request.put_header("Content-Type", "application/soap+xml")
+      |> Req.Request.put_header("User-Agent", user_agent())
 
-        {:error, %Results{input | response: http_response, errors: errors}}
+    {_, %Req.Response{status: status} = response} = Req.Request.run_request(req)
 
-      {:ok, http_response} ->
-        case http_response.status_code do
-          200 ->
-            handle_status_200(input, http_response)
+    if status == 200 do
+      handle_status_200(input, response)
+    else
+      errors =
+        Map.put(errors, :http_not_OK, "HTTP status code #{status} (not OK).")
 
-          _ ->
-            errors =
-              Map.put(
-                errors,
-                :http_not_OK,
-                "HTTP status code #{http_response.status_code} (not OK)."
-              )
-
-            {:error, %Results{input | response: http_response, errors: errors}}
-        end
+      {:error, %Results{input | response: response, errors: errors}}
     end
   end
 
@@ -85,16 +73,34 @@ defmodule VatchexGreece.Request do
     {:error, input}
   end
 
-  # refactored function to void 3-levels-deep case handling in post/1
-  defp handle_status_200(%Results{errors: errors} = input, http_response) do
+  defp user_agent do
+    client =
+      __MODULE__
+      |> Module.split()
+      |> hd()
+
+    version =
+      client
+      |> Macro.underscore()
+      |> String.to_atom()
+      |> Application.spec(:vsn)
+
+    List.to_string([client, "/", version])
+  end
+
+  # refactored function to avoid 3-levels-deep case handling in post/1
+  defp handle_status_200(
+         %Results{errors: errors} = input,
+         %Req.Response{body: body} = http_response
+       ) do
     if String.contains?(
-         http_response.body,
+         body,
          "RG_WS_PUBLIC_TOKEN_USERNAME_NOT_AUTHENTICATED"
        ) do
       errors = Map.put(errors, :authentication_error, "Authentication error.")
       {:error, %Results{input | response: http_response, errors: errors}}
     else
-      {:ok, %Results{input | response: http_response}}
+      {:ok, %Results{input | response: http_response, errors: nil}}
     end
   end
 end

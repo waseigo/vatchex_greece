@@ -4,7 +4,7 @@ defmodule VatchexGreece.MixProject do
   def project do
     [
       app: :vatchex_greece,
-      version: "0.7.0",
+      version: "0.8.0",
       elixir: "~> 1.14",
       start_permanent: Mix.env() == :prod,
       description: description(),
@@ -14,7 +14,7 @@ defmodule VatchexGreece.MixProject do
       # Docs
       name: "VatchexGreece",
       source_url: "https://github.com/waseigo/vatchex_greece",
-      homepage_url: "https://blog.waseigo.com/tags/vatchex_greece/",
+      homepage_url: "https://overbring.com/software/vatchex_greece/",
       docs: [
         # The main page in the docs
         main: "VatchexGreece",
@@ -42,7 +42,7 @@ defmodule VatchexGreece.MixProject do
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
-      extra_applications: [:logger, :eex]
+      extra_applications: [:eex]
     ]
   end
 
@@ -50,7 +50,7 @@ defmodule VatchexGreece.MixProject do
   defp deps do
     [
       {:sweet_xml, "~> 0.7.3"},
-      {:httpoison, "~> 2.0"},
+      {:req, "~> 0.5.6"},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.27", only: :dev, runtime: false}
     ]
