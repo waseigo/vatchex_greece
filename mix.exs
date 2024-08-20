@@ -4,7 +4,7 @@ defmodule VatchexGreece.MixProject do
   def project do
     [
       app: :vatchex_greece,
-      version: "0.8.0",
+      version: "0.8.1",
       elixir: "~> 1.14",
       start_permanent: Mix.env() == :prod,
       description: description(),
@@ -50,7 +50,7 @@ defmodule VatchexGreece.MixProject do
   defp deps do
     [
       {:sweet_xml, "~> 0.7.3"},
-      {:req, "~> 0.5.6"},
+      {:req, "~> 0.5"},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.27", only: :dev, runtime: false}
     ]

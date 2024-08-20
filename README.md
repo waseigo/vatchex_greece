@@ -14,7 +14,7 @@ by adding `vatchex_greece` to your list of dependencies in `mix.exs`.
 ```elixir
 def deps do
   [
-    {:vatchex_greece, "~> 0.8.0"},
+    {:vatchex_greece, "~> 0.8"},
   ]
 end
 ```
