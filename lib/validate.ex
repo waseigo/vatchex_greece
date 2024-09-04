@@ -82,7 +82,7 @@ defmodule VatchexGreece.Validate do
   Unsafe check that the passed VAT ID only contains digits.
   """
   @doc since: "0.5.0"
-  def check_only_digits!(vat_id) when is_bitstring(vat_id) do
+  def check_only_digits!(vat_id) do
     case check_only_digits(vat_id) do
       {:ok, vat_id} -> vat_id
       {:error, message} -> raise RuntimeError, message: message
