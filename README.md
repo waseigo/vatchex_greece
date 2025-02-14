@@ -42,3 +42,9 @@ Refer to the [documentation on HexDocs](https://hexdocs.pm/vatchex_greece/Vatche
 ## Documentation
 
 The docs can be found at <https://hexdocs.pm/vatchex_greece>. There's also an [Elixir Forum thread](https://elixirforum.com/t/vatchexgreece-a-library-for-retrieving-greek-company-info-from-the-soap-web-service-of-gsis-using-the-vat-id/54425).
+
+## Donate
+
+Has this library been useful for your project? 
+
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/V7V119L07A)
