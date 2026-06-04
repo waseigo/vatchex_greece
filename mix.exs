@@ -4,7 +4,7 @@ defmodule VatchexGreece.MixProject do
   def project do
     [
       app: :vatchex_greece,
-      version: "0.8.1",
+      version: "1.0.0",
       elixir: "~> 1.14",
       start_permanent: Mix.env() == :prod,
       description: description(),
@@ -20,6 +20,8 @@ defmodule VatchexGreece.MixProject do
         main: "VatchexGreece",
         logo: "./assets/logo.png",
         extras: ["README.md"]
+        # Only the main VatchexGreece module is part of the public documented API.
+        # All other modules are internal implementation details (@moduledoc false).
       ]
     ]
   end
@@ -51,8 +53,8 @@ defmodule VatchexGreece.MixProject do
     [
       {:sweet_xml, "~> 0.7.3"},
       {:req, "~> 0.5"},
-      {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
-      {:ex_doc, "~> 0.27", only: :dev, runtime: false}
+      {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
+      {:ex_doc, "~> 0.40.3", only: :dev, runtime: false, warn_if_outdated: true}
     ]
   end
 end
