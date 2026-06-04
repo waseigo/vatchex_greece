@@ -2,10 +2,10 @@
 # SPDX-License-Identifier: Apache-2.0
 
 defmodule VatchexGreece.Validate do
-  @moduledoc """
-  Module with functions used to validate Greek VAT IDs.
-  """
-  @moduledoc since: "0.5.0"
+  @moduledoc false
+
+  require Logger
+  alias VatchexGreece.{APIauth, GSISdata, Results}
 
   @valid_chars Enum.map(0..9, fn x -> Kernel.to_string(x) end)
 
@@ -67,7 +67,9 @@ defmodule VatchexGreece.Validate do
     if c do
       {:ok, vat_id}
     else
-      {:error, "Error: VAT ID #{vat_id} does not contain only digits."}
+      message = "Error: VAT ID #{vat_id} does not contain only digits."
+      Logger.error(message)
+      {:error, message}
     end
   end
 
@@ -76,7 +78,6 @@ defmodule VatchexGreece.Validate do
     |> Integer.to_string()
     |> check_only_digits()
   end
-
 
   @doc """
   Unsafe check that the passed VAT ID only contains digits.
@@ -113,8 +114,11 @@ defmodule VatchexGreece.Validate do
     if c do
       {:ok, vat_id}
     else
-      {:error,
-       "Error: VAT ID #{vat_id} has an incorrect length (not 9 digits)."}
+      message =
+        "Error: VAT ID #{vat_id} has an incorrect length (not 9 digits)."
+
+      Logger.error(message)
+      {:error, message}
     end
   end
 
@@ -158,7 +162,9 @@ defmodule VatchexGreece.Validate do
     if c do
       {:ok, vat_id}
     else
-      {:error, "Error: VAT ID #{vat_id} checksum mismatch."}
+      message = "Error: VAT ID #{vat_id} checksum mismatch."
+      Logger.error(message)
+      {:error, message}
     end
   end
 
@@ -200,11 +206,8 @@ defmodule VatchexGreece.Validate do
     false not in Enum.map(checks, fn func -> func.(vat_id) end)
   end
 
-  @doc """
-  Check whether both VAT IDs passed (as strings) are valid. If not, log the corresponding error in the results struct.
-  """
-  @doc since: "0.7.0"
-  def all_valid(
+  @doc false
+  def validate(
         %Results{
           auth: %APIauth{afm_called_by: afm_called_by},
           data: %GSISdata{afm: afm_called_for},
