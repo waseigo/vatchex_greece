@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<env:Envelope xmlns:env="http://www.w3.org/2003/05/soap-envelope" xmlns:ns1="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd" xmlns:ns2="http://rgwspublic2/RgWsPublic2Service" xmlns:ns3="http://rgwspublic2/RgWsPublic2">
+   <env:Header>
+      <ns1:Security>
+         <ns1:UsernameToken>
+            <ns1:Username><%= username %></ns1:Username>
+            <ns1:Password><%= password %></ns1:Password>
+         </ns1:UsernameToken>
+      </ns1:Security>
+   </env:Header>
+   <env:Body>
+      <ns2:rgWsPublic2AfmMethod>
+         <ns2:INPUT_REC>
+            <ns3:afm_called_by><%= afm_called_by %></ns3:afm_called_by>
+            <ns3:afm_called_for><%= afm_called_for %></ns3:afm_called_for>
+            <ns3:as_on_date><%= as_on_date %></ns3:as_on_date>
+         </ns2:INPUT_REC>
+      </ns2:rgWsPublic2AfmMethod>
+   </env:Body>
+</env:Envelope>
+
