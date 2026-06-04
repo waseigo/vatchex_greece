@@ -14,7 +14,7 @@ by adding `vatchex_greece` to your list of dependencies in `mix.exs`.
 ```elixir
 def deps do
   [
-    {:vatchex_greece, "~> 0.8"},
+    {:vatchex_greece, "~> 1.0"},
   ]
 end
 ```
@@ -24,6 +24,28 @@ end
 Refer to the [documentation on HexDocs](https://hexdocs.pm/vatchex_greece/VatchexGreece.html).
 
 ## Changelog
+
+### v1.0.0
+
+#### Breaking changes vs. v0.8.0
+
+The legacy pipeline API has been removed for the 1.0 release.
+
+- `VatchexGreece.new/4` and `VatchexGreece.get/1` are gone.
+- `VatchexGreece.Validate.all_valid/1` is no longer public (internal validation logic remains private).
+- The top-level legacy structs (APIauth, GSISdata, Results, NACEactivity) are now strictly internal (@moduledoc false) and no longer referenced in public documentation.
+- Only the high-level `fetch/1` / `fetch!/1` API is part of the supported public surface.
+- `fetch!/1` now raises `VatchexGreece.FetchError`.
+- All other modules (`VatchexGreece.Request`, `VatchexGreece.Processing`, `VatchexGreece.Validate`, and the legacy structs) are now strictly internal (`@moduledoc false`) and hidden from generated documentation.
+- The internal pipeline (accumulator + steps) remains but is not part of the public API.
+
+#### Improvements
+
+- Log info, error and debug messages for some situations.
+- Always send `as_on_date` (today) in requests, to match the reference Java client implementation.
+- Post requests to the service endpoint (without `?wsdl`) instead of the WSDL URL.
+- Properly detect and return service errors from the `error_rec` in responses (previously, errors from the GSIS service would result in `{:ok, %{... all nils ...}}` with only `as_on_date` populated, masking the actual error).
+- Removed early string-based auth error check in favor of general service error handling (auth errors now surface with their `service_error` code and Greek description from the service).
 
 ### v0.8.0
 
@@ -37,14 +59,8 @@ Refer to the [documentation on HexDocs](https://hexdocs.pm/vatchex_greece/Vatche
 - Now needs no application setup in `config.exs` or `mix.exs`, thanks to getting rid of the [Soap](https://github.com/elixir-soap/soap) library due to parsing issues, and because it seems abandoned and not particularly robust to begin with.
 - XML parsing is now handled directly with [SweetXml](https://hexdocs.pm/sweet_xml/SweetXml.html).
 - Actual logging of errors in the `%Results{}` struct means you can find out what went wrong.
-- Actual handling of errors (with `{:ok, ...}` and `{:error, ...}` tuples along the pipeline across all modules means that no API call or parsing of the XML response body is made unless no errors have popped up.
+- Actual handling of errors (with `{:ok, ...}` and `{:error, ...}` tuples) along the pipeline across all modules means that no API call or parsing of the XML response body is made unless no errors have popped up.
 
 ## Documentation
 
 The docs can be found at <https://hexdocs.pm/vatchex_greece>. There's also an [Elixir Forum thread](https://elixirforum.com/t/vatchexgreece-a-library-for-retrieving-greek-company-info-from-the-soap-web-service-of-gsis-using-the-vat-id/54425).
-
-## Donate
-
-Has this library been useful for your project? 
-
-[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/V7V119L07A)

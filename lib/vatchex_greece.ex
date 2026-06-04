@@ -1,118 +1,41 @@
 # SPDX-FileCopyrightText: 2023 Isaak Tsalicoglou <isaak@waseigo.com>
 # SPDX-License-Identifier: Apache-2.0
 
-defmodule APIauth do
-  @moduledoc """
-  Defines the `%APIauth{}` struct used to store authentication data for SOAP API calls.
-  """
-  @moduledoc since: "0.7.0"
-  @enforce_keys [:username, :password, :afm_called_by]
-  defstruct @enforce_keys
-end
-
-defmodule NACEactivity do
-  @moduledoc """
-  Defines the `%NACEactivity{}` struct to store parsed information about company activities.
-  """
-  @enforce_keys [:code]
-  defstruct code: nil,
-            # secondary activity, if not specified otherwise with "1" for primary activity
-            prio: 2,
-            # description of the activity; cosmetic
-            descr: nil,
-            # "ΚΥΡΙΑ" for primary, "ΔΕΥΤΕΡΕΥΟΥΣΑ" for secondary; cosmetic
-            prio_text: nil
-end
-
-defmodule GSISdata do
-  @moduledoc """
-  Defines the `%GSISdata{}` struct used by the functions of the `Process` module to process and store the response of the GSIS SOAP API in a usable format.
-  """
-  @moduledoc since: "0.7.0"
-  @enforce_keys [:afm]
-  defstruct [
-    :afm,
-    :as_on_date,
-    :doy,
-    :doy_descr,
-    :i_ni_flag_descr,
-    :deactivation_flag,
-    :deactivation_flag_descr,
-    :firm_flag_descr,
-    :onomasia,
-    :commer_title,
-    :legal_status_descr,
-    :postal_address,
-    :postal_address_no,
-    :postal_zip_code,
-    :postal_area_description,
-    :regist_date,
-    :stop_date,
-    :normal_vat_system_flag,
-    activities: []
-  ]
-end
-
-defmodule Results do
-  @moduledoc """
-  Defines the `%Results{}` struct that gets progressively enriched with information from the API.
-  """
-  @enforce_keys [:auth]
-  defstruct [
-    :auth,
-    :data,
-    :request,
-    :response,
-    errors: %{}
-  ]
-end
-
 defmodule VatchexGreece do
   require EEx
 
   @moduledoc """
-  Main module of `VatchexGreece` that contains high-level functions that the
-  user typically will interact with.
+  Client for the Greek GSIS RgWsPublic2 SOAP service (VAT / ΑΦΜ registry lookup).
+
+  ## Public API
+
+  ```elixir
+  VatchexGreece.fetch(
+    afm_called_for: "the_target_afm_to_query",
+    username: "your_token_username",
+    password: "your_special_access_code",
+    afm_called_by: "your_own_afm_or_delegator"
+  )
+  ```
+
+  See `fetch/1` for authentication instructions, automatic normalization of
+  VAT IDs (EL/GR prefix handling, 8→9 digit padding), and the exact shape
+  of the returned data map.
+
+  The implementation is internal; only `fetch/1` and `fetch!/1` are the
+  supported public API.
   """
   @moduledoc since: "0.1.0"
 
-  alias VatchexGreece.{Request, Process, Validate}
-
-  @doc """
-  Define a new struct that will be manipulated from containing only the minimal information required to query the SOAP API, to containing the complete request, the SOAP API response, and the parsed information thereof into the corresponding structs.
-
-  """
-  @doc since: "0.8.0"
-  @doc deprecated: "Instead of chaining this with get/1, use fetch/1"
-
-  def new(afm_called_for, username, password, afm_called_by) do
-    auth = %APIauth{
-      username: username,
-      password: password,
-      afm_called_by: afm_called_by
-    }
-
-    data = %GSISdata{afm: afm_called_for}
-
-    %Results{auth: auth, data: data}
-  end
-
-  @doc """
-  Pull information from the web service for the target VAT ID `afm_called_for` defined in the `Results` struct that has first been created with `new/4`.
-
-  Note: the function minimizes and checks the source and target VAT IDs, and only
-  sends the request to the API if both minimized VAT IDs are valid.
-  """
-
-  @doc since: "0.7.0"
-  @doc deprecated: "Instead of chaining this after new/4, use fetch/1"
-  def get(%Results{} = input) do
-    input
-    |> Validate.all_valid()
-    |> Request.prepare()
-    |> Request.post()
-    |> Process.parse()
-  end
+  alias VatchexGreece.{
+    Request,
+    Processing,
+    Validate,
+    APIauth,
+    GSISdata,
+    Results,
+    FetchError
+  }
 
   @doc """
   Pull information from the web service for the target VAT ID `:afm_called_for`, by the source VAT ID `:afm_called_by`, with authentication parameters `:username` and `:password`.
@@ -125,7 +48,6 @@ defmodule VatchexGreece do
 
   Note: the function minimizes and checks the source and target VAT IDs, and only sends the request to the API if both minimized VAT IDs are valid.
   """
-
   @doc since: "0.8.0"
   def fetch(
         afm_called_for: target,
@@ -133,21 +55,20 @@ defmodule VatchexGreece do
         password: p,
         afm_called_by: source
       ) do
-    x =
-      target
-      |> new(u, p, source)
-      |> do_get()
-
-    case x do
+    target
+    |> build_initial_results(u, p, source)
+    |> run()
+    |> case do
       {:ok, %Results{data: data}} -> {:ok, mapize(data)}
       {:error, %Results{errors: errors}} -> {:error, errors}
     end
   end
 
   @doc """
-  Same as `VatchexGreece.fetch/1`, but the resulting tuple is unwrapped. Returns `nil` if there were errors, otherwise it returns the resulting data.
-  """
+  Same as `VatchexGreece.fetch/1`, but the resulting tuple is unwrapped.
 
+  Returns the resulting data if successful. Raises `VatchexGreece.FetchError` if there were errors, containing the errors list in the `errors` field of the exception.
+  """
   @doc since: "0.8.0"
   def fetch!(
         afm_called_for: target,
@@ -155,26 +76,39 @@ defmodule VatchexGreece do
         password: p,
         afm_called_by: source
       ) do
-    x =
-      fetch(
-        afm_called_for: target,
-        username: u,
-        password: p,
-        afm_called_by: source
-      )
+    case fetch(
+           afm_called_for: target,
+           username: u,
+           password: p,
+           afm_called_by: source
+         ) do
+      {:ok, data} ->
+        data
 
-    case x do
-      {:ok, data} -> data
-      {:error, _} -> nil
+      {:error, errors} ->
+        raise FetchError, errors
     end
   end
 
-  defp do_get(%Results{} = input) do
+  # --- Legacy pipeline (internal) ---
+
+  defp build_initial_results(afm_called_for, username, password, afm_called_by) do
+    %Results{
+      auth: %APIauth{
+        username: username,
+        password: password,
+        afm_called_by: afm_called_by
+      },
+      data: %GSISdata{afm: afm_called_for}
+    }
+  end
+
+  defp run(%Results{} = input) do
     input
-    |> Validate.all_valid()
+    |> Validate.validate()
     |> Request.prepare()
     |> Request.post()
-    |> Process.parse()
+    |> Processing.parse()
   end
 
   defp mapize(x) when is_struct(x) do
