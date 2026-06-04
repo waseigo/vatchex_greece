@@ -24,3 +24,5 @@ vatchex_greece-*.tar
 
 # Temporary files, for example, from tests.
 /tmp/
+
+erlang-shell-log*
