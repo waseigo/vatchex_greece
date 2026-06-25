@@ -184,12 +184,50 @@ This design means:
 | ------------------ | ----------------------------------------- |
 | `sweet_xml`        | XPath-based XML parsing of SOAP responses |
 | `req`              | HTTP client for SOAP POST requests        |
+| `cachex` (optional)| In-memory caching via `VatchexGreece.CachexCache` |
 | `credo` (dev/test) | Static analysis / linting                 |
 | `ex_doc` (dev)     | HexDocs documentation generation          |
 
 ## Configuration
 
-None required. The library is stateless — credentials are passed per-call to `fetch/1`. The `config/config.exs` file contains only `import Config` (no application supervision tree needed).
+None required for basic use. Credentials are passed per-call to `fetch/1`.
+
+### Caching
+
+To enable caching, add a `:cache` option to `fetch/1`:
+
+```elixir
+VatchexGreece.fetch(
+  afm_called_for: "998144460",
+  username: "user",
+  password: "pass",
+  afm_called_by: "123456789",
+  cache: VatchexGreece.CachexCache
+)
+```
+
+You must have a Cachex instance running in your supervision tree:
+
+```elixir
+# mix.exs
+{:cachex, "~> 4.1"}
+
+# application.ex
+children = [
+  {Cachex, name: :vatchex_greece, limit: 10_000},
+  ...
+]
+```
+
+Optional config:
+
+```elixir
+# config/config.exs
+config :vatchex_greece, :cache_name, :vatchex_greece  # Cachex cache name (default: :vatchex_greece)
+config :vatchex_greece, :cache_ttl, 3_600_000       # TTL in ms (default: 1 hour)
+```
+
+Caching is strictly optional. If `cache: nil` (default) or Cachex is not loaded, requests bypass the cache entirely.
 
 ## Testing
 
@@ -197,12 +235,13 @@ None required. The library is stateless — credentials are passed per-call to `
 mix test
 ```
 
-48 tests, no external dependencies. The suite covers:
+56 tests, no external dependencies. The suite covers:
 
 - **Validate** — VAT ID normalization (`EL`/`GR` prefix stripping, 8→9 digit padding, whitespace removal), ISO 7064 checksum validation
 - **Processing** — XML response parsing (`extract_string`, `extract_error`, `extract_activities`), KAD field fixup (`parse_kad`)
 - **Request** — SOAP envelope generation from EEx template
 - **Pipeline** — `fetch/1` input validation short-circuit (invalid VAT IDs never reach the HTTP layer), `fetch!/1` error raising
+- **Cache** — cache hit/miss behavior, error caching prevention, protocol dispatch
 
 No integration tests against the live GSIS service are included. Consumers should validate against the service independently.
 

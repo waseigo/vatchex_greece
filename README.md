@@ -14,7 +14,7 @@ by adding `vatchex_greece` to your list of dependencies in `mix.exs`.
 ```elixir
 def deps do
   [
-    {:vatchex_greece, "~> 1.0"},
+    {:vatchex_greece, "~> 1.1"},
   ]
 end
 ```
@@ -34,13 +34,29 @@ Returns a map with company information (onomasia, address, registration date, NA
 
 Refer to the [documentation on HexDocs](https://hexdocs.pm/vatchex_greece/VatchexGreece.html) for the full API reference.
 
+### Caching
+
+Pass a `:cache` option to enable caching of successful lookups:
+
+```elixir
+VatchexGreece.fetch(
+  afm_called_for: "998144460",
+  username: "your_token_username",
+  password: "your_special_access_code",
+  afm_called_by: "your_own_afm",
+  cache: VatchexGreece.CachexCache
+)
+```
+
+You must have a Cachex instance running in your supervision tree. See [hexdocs.pm/cachex](https://hexdocs.pm/cachex) for setup.
+
 ## Testing
 
 ```sh
 mix test
 ```
 
-48 unit tests, no external dependencies or live service calls. Covers VAT ID validation, XML response parsing, SOAP envelope generation, and pipeline error handling.
+56 unit tests, no external dependencies or live service calls. Covers VAT ID validation, XML response parsing, SOAP envelope generation, pipeline error handling, and caching behavior.
 
 ## Changelog
 
