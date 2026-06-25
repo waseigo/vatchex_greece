@@ -48,12 +48,6 @@ defmodule VatchexGreece.Validate do
     |> Integer.mod(10)
   end
 
-  defp calculate_check_digit(number) when is_integer(number) do
-    number
-    |> Integer.to_string()
-    |> calculate_check_digit()
-  end
-
   @doc """
   Check that the passed VAT ID only contains digits.
   """
