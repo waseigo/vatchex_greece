@@ -15,7 +15,7 @@ defmodule VatchexGreece.Validate do
   including adding a leading "0" in case the provided ID had 8 digits (old format).
   """
   @doc since: "0.5.0"
-  def minimize(vat_id) when is_bitstring(vat_id) do
+  def minimize(vat_id) when is_binary(vat_id) do
     vat_id
     |> String.graphemes()
     |> Enum.map(fn x -> if x in @valid_chars, do: x end)
@@ -39,7 +39,7 @@ defmodule VatchexGreece.Validate do
 
   defp checksum([], acc), do: acc
 
-  defp calculate_check_digit(number) when is_bitstring(number) do
+  defp calculate_check_digit(number) when is_binary(number) do
     String.graphemes(number)
     |> Enum.map(&String.to_integer/1)
     |> checksum()
@@ -58,7 +58,7 @@ defmodule VatchexGreece.Validate do
   Check that the passed VAT ID only contains digits.
   """
   @doc since: "0.5.0"
-  def check_only_digits(vat_id) when is_bitstring(vat_id) do
+  def check_only_digits(vat_id) when is_binary(vat_id) do
     c =
       vat_id
       |> Integer.parse()
