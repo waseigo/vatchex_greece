@@ -47,20 +47,30 @@ defmodule VatchexGreece do
   Regarding the target and source VAT IDs, you will typically pass a valid 9-digit VAT ID, with or without the "EL" prefix. The "EL" prefix will get stripped. Older VAT IDs only have 8 digits, and will get leading-zero-padded to 9 digits.
 
   Note: the function minimizes and checks the source and target VAT IDs, and only sends the request to the API if both minimized VAT IDs are valid.
+
+  ## Caching
+
+  Pass a `:cache` option to enable caching. The value must implement the `VatchexGreece.Cache` protocol.
+
+  ```elixir
+  VatchexGreece.fetch(
+    afm_called_for: "998144460",
+    username: "user",
+    password: "pass",
+    afm_called_by: "123456789",
+    cache: VatchexGreece.CachexCache
+  )
+  ```
+
+  Successful results are cached; errors are never cached. When no `:cache` option is provided, caching is disabled.
   """
   @doc since: "0.8.0"
-  def fetch(
-        afm_called_for: target,
-        username: u,
-        password: p,
-        afm_called_by: source
-      ) do
-    target
-    |> build_initial_results(u, p, source)
-    |> run()
-    |> case do
-      {:ok, %Results{data: data}} -> {:ok, mapize(data)}
-      {:error, %Results{errors: errors}} -> {:error, errors}
+  def fetch(opts) do
+    cache = Keyword.get(opts, :cache, nil)
+
+    case do_fetch(opts, cache) do
+      {:ok, data} = result -> maybe_cache(cache, cache_key(opts), data); result
+      {:error, _} = error -> error
     end
   end
 
@@ -70,18 +80,8 @@ defmodule VatchexGreece do
   Returns the resulting data if successful. Raises `VatchexGreece.FetchError` if there were errors, containing the errors list in the `errors` field of the exception.
   """
   @doc since: "0.8.0"
-  def fetch!(
-        afm_called_for: target,
-        username: u,
-        password: p,
-        afm_called_by: source
-      ) do
-    case fetch(
-           afm_called_for: target,
-           username: u,
-           password: p,
-           afm_called_by: source
-         ) do
+  def fetch!(opts) do
+    case fetch(opts) do
       {:ok, data} ->
         data
 
@@ -89,6 +89,43 @@ defmodule VatchexGreece do
         raise FetchError, errors
     end
   end
+
+  # --- Caching ---
+
+  defp do_fetch(opts, cache) do
+    afm_called_for = Keyword.get(opts, :afm_called_for)
+    username = Keyword.get(opts, :username)
+    password = Keyword.get(opts, :password)
+    afm_called_by = Keyword.get(opts, :afm_called_by)
+
+    case cache_get(cache, cache_key(opts)) do
+      {:ok, data} ->
+        {:ok, data}
+
+      :miss ->
+        afm_called_for
+        |> build_initial_results(username, password, afm_called_by)
+        |> run()
+        |> case do
+          {:ok, %Results{data: data}} -> {:ok, mapize(data)}
+          {:error, %Results{errors: errors}} -> {:error, errors}
+        end
+    end
+  end
+
+  defp cache_key(opts) do
+    target = Keyword.get(opts, :afm_called_for, "")
+    source = Keyword.get(opts, :afm_called_by, "")
+    "vatchex:#{target}:#{source}"
+  end
+
+  defp maybe_cache(nil, _key, _data), do: :ok
+  defp maybe_cache(cache, key, data), do: VatchexGreece.Cache.put(cache, key, data, cache_ttl())
+
+  defp cache_get(nil, _key), do: :miss
+  defp cache_get(cache, key), do: VatchexGreece.Cache.get(cache, key)
+
+  defp cache_ttl, do: Application.get_env(:vatchex_greece, :cache_ttl, 3_600_000)
 
   # --- Legacy pipeline (internal) ---
 

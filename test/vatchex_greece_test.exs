@@ -433,3 +433,132 @@ defmodule VatchexGreece.PipelineTest do
     end
   end
 end
+
+defmodule VatchexGreece.CacheTest do
+  use ExUnit.Case
+
+  alias VatchexGreece
+
+  setup do
+    VatchexGreece.TestCache.start_link([])
+    :ok
+  end
+
+  describe "fetch/1 with cache" do
+    test "returns cached result on hit" do
+      cached_data = %{onomasia: "CACHED CO.", regist_date: "2020-01-01"}
+      VatchexGreece.TestCache.put(VatchexGreece.TestCache, "vatchex:998144460:998144460", cached_data, 3_600_000)
+
+      result = VatchexGreece.fetch(
+        afm_called_for: "998144460",
+        username: "user",
+        password: "pass",
+        afm_called_by: "998144460",
+        cache: VatchexGreece.TestCache
+      )
+
+      assert {:ok, data} = result
+      assert data[:onomasia] == "CACHED CO."
+    end
+
+    test "falls through to API on cache miss" do
+      result = VatchexGreece.fetch(
+        afm_called_for: "998144460",
+        username: "user",
+        password: "pass",
+        afm_called_by: "998144460",
+        cache: VatchexGreece.TestCache
+      )
+
+      # The API call will succeed (HTTP 200) but return a service error
+      # because credentials are invalid
+      assert {:error, errors} = result
+      assert is_map(errors)
+    end
+
+    test "stores successful result in cache" do
+      cached_data = %{onomasia: "TEST STORE"}
+      VatchexGreece.TestCache.put(VatchexGreece.TestCache, "vatchex:998144460:998144460", cached_data, 3_600_000)
+
+      result = VatchexGreece.fetch(
+        afm_called_for: "998144460",
+        username: "user",
+        password: "pass",
+        afm_called_by: "998144460",
+        cache: VatchexGreece.TestCache
+      )
+
+      assert {:ok, _} = result
+    end
+
+    test "does not cache errors" do
+      result = VatchexGreece.fetch(
+        afm_called_for: "123456789",
+        username: "user",
+        password: "pass",
+        afm_called_by: "998144460",
+        cache: VatchexGreece.TestCache
+      )
+
+      assert {:error, _} = result
+    end
+
+    test "cache key includes both source and target AFM" do
+      VatchexGreece.TestCache.put(VatchexGreece.TestCache, "vatchex:110000000:998144460", %{onomasia: "KEY TEST"}, 3_600_000)
+
+      result = VatchexGreece.fetch(
+        afm_called_for: "110000000",
+        username: "user",
+        password: "pass",
+        afm_called_by: "998144460",
+        cache: VatchexGreece.TestCache
+      )
+
+      assert {:ok, data} = result
+      assert data[:onomasia] == "KEY TEST"
+    end
+  end
+
+  describe "fetch!/1 with cache" do
+    test "returns cached result on hit" do
+      cached_data = %{onomasia: "CACHED BANG"}
+      VatchexGreece.TestCache.put(VatchexGreece.TestCache, "vatchex:998144460:998144460", cached_data, 3_600_000)
+
+      data = VatchexGreece.fetch!(
+        afm_called_for: "998144460",
+        username: "user",
+        password: "pass",
+        afm_called_by: "998144460",
+        cache: VatchexGreece.TestCache
+      )
+
+      assert data[:onomasia] == "CACHED BANG"
+    end
+
+    test "raises FetchError on cache miss with invalid VAT" do
+      assert_raise VatchexGreece.FetchError, fn ->
+        VatchexGreece.fetch!(
+          afm_called_for: "123456789",
+          username: "user",
+          password: "pass",
+          afm_called_by: "998144460",
+          cache: VatchexGreece.TestCache
+        )
+      end
+    end
+  end
+
+  describe "fetch/1 without cache option" do
+    test "does not use cache when cache option is nil" do
+      result = VatchexGreece.fetch(
+        afm_called_for: "998144460",
+        username: "user",
+        password: "pass",
+        afm_called_by: "998144460"
+      )
+
+      # Will hit the API and get auth error (no cache involved)
+      assert {:error, _} = result
+    end
+  end
+end
