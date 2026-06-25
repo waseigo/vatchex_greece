@@ -21,7 +21,26 @@ end
 
 ## Usage
 
-Refer to the [documentation on HexDocs](https://hexdocs.pm/vatchex_greece/VatchexGreece.html).
+```elixir
+{:ok, data} = VatchexGreece.fetch(
+  afm_called_for: "998144460",
+  username: "your_token_username",
+  password: "your_special_access_code",
+  afm_called_by: "your_own_afm"
+)
+```
+
+Returns a map with company information (onomasia, address, registration date, NACE activities, etc.) or `{:error, errors}` with validation/service error details.
+
+Refer to the [documentation on HexDocs](https://hexdocs.pm/vatchex_greece/VatchexGreece.html) for the full API reference.
+
+## Testing
+
+```sh
+mix test
+```
+
+48 unit tests, no external dependencies or live service calls. Covers VAT ID validation, XML response parsing, SOAP envelope generation, and pipeline error handling.
 
 ## Changelog
 

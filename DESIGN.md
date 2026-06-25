@@ -192,7 +192,18 @@ None required. The library is stateless — credentials are passed per-call to `
 
 ## Testing
 
-Minimal. `test/vatchex_greece_test.exs` contains only a `doctest` check. The library is primarily validated against the live GSIS service (integration testing by consumers).
+```
+mix test
+```
+
+48 tests, no external dependencies. The suite covers:
+
+- **Validate** — VAT ID normalization (`EL`/`GR` prefix stripping, 8→9 digit padding, whitespace removal), ISO 7064 checksum validation
+- **Processing** — XML response parsing (`extract_string`, `extract_error`, `extract_activities`), KAD field fixup (`parse_kad`)
+- **Request** — SOAP envelope generation from EEx template
+- **Pipeline** — `fetch/1` input validation short-circuit (invalid VAT IDs never reach the HTTP layer), `fetch!/1` error raising
+
+No integration tests against the live GSIS service are included. Consumers should validate against the service independently.
 
 ## Version History (Architectural Significance)
 
