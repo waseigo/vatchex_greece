@@ -10,16 +10,16 @@ The public API is two functions: `fetch/1` (returns `{:ok, map}` / `{:error, map
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                      Public API                              │
-│  fetch/1  ──►  build_initial_results  ──►  run/1  ──► map  │
-│  fetch!/1 ──►  case fetch/1  ──►  raise FetchError on err  │
+│                      Public API                             │
+│  fetch/1  ──►  build_initial_results  ──►  run/1  ──► map   │
+│  fetch!/1 ──►  case fetch/1  ──►  raise FetchError on err   │
 └──────────────────────────┬──────────────────────────────────┘
                            │
          ┌─────────────────┼─────────────────┐
          ▼                 ▼                 ▼
    ┌──────────┐    ┌──────────────┐   ┌────────────┐
    │ Validate │───►│   Request    │──►│ Processing │
-   │ (VAT ID) │    │ (SOAP envelope│   │ (XML parse)│
+   │ (VAT ID) │    │(SOAP envelope│   │ (XML parse)│
    │          │    │  + HTTP POST)│   │            │
    └──────────┘    └──────────────┘   └────────────┘
          │                 │                 │
@@ -151,14 +151,15 @@ Step 5 — mapize (in fetch/1)
 
 Errors are accumulated in the `%Results.errors` map as `:key => description` pairs. Each pipeline step only proceeds if errors is empty. Error keys used:
 
-| Key | Source | Meaning |
-|-----|--------|---------|
-| `:validity_source` | Validate | `afm_called_by` failed checksum/length check |
-| `:validity_target` | Validate | `afm_called_for` failed checksum/length check |
-| `:http_not_ok` | Request.post | Non-200 HTTP response |
-| `:service_error` | Processing.parse | GSIS returned an `error_rec` in the SOAP body |
+| Key                | Source           | Meaning                                       |
+| ------------------ | ---------------- | --------------------------------------------- |
+| `:validity_source` | Validate         | `afm_called_by` failed checksum/length check  |
+| `:validity_target` | Validate         | `afm_called_for` failed checksum/length check |
+| `:http_not_ok`     | Request.post     | Non-200 HTTP response                         |
+| `:service_error`   | Processing.parse | GSIS returned an `error_rec` in the SOAP body |
 
 This design means:
+
 - Validation errors prevent any network call.
 - HTTP errors prevent XML parsing.
 - Service errors (including auth failures) are returned with their Greek description from the API, not masked as empty data.
@@ -179,12 +180,12 @@ This design means:
 
 ## Dependencies
 
-| Dependency | Purpose |
-|-----------|---------|
-| `sweet_xml` | XPath-based XML parsing of SOAP responses |
-| `req` | HTTP client for SOAP POST requests |
-| `credo` (dev/test) | Static analysis / linting |
-| `ex_doc` (dev) | HexDocs documentation generation |
+| Dependency         | Purpose                                   |
+| ------------------ | ----------------------------------------- |
+| `sweet_xml`        | XPath-based XML parsing of SOAP responses |
+| `req`              | HTTP client for SOAP POST requests        |
+| `credo` (dev/test) | Static analysis / linting                 |
+| `ex_doc` (dev)     | HexDocs documentation generation          |
 
 ## Configuration
 
