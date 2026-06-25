@@ -135,7 +135,7 @@ defmodule VatchexGreece.Processing do
 
     data_struct = struct(GSISdata, data_map)
 
-    data_struct = %GSISdata{
+    data_struct = %{
       data_struct
       | activities: extract_activities(body)
     }
