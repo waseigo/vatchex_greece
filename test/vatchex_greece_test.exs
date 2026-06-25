@@ -561,6 +561,4 @@ defmodule VatchexGreece.CacheTest do
       assert {:error, _} = result
     end
   end
-
-
 end
