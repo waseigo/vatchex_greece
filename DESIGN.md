@@ -164,6 +164,26 @@ This design means:
 - HTTP errors prevent XML parsing.
 - Service errors (including auth failures) are returned with their Greek description from the API, not masked as empty data.
 
+## Caching
+
+```
+fetch/1
+  ├── cache hit? → return cached result
+  ├── Validate
+  ├── Request.prepare
+  ├── Request.post
+  ├── Processing.parse
+  └── store in cache (if success) → return
+```
+
+Caching is implemented via the `VatchexGreece.Cache` protocol, allowing pluggable adapters. The built-in `VatchexGreece.CachexCache` adapter wraps Cachex v4.x and is conditionally compiled — it is only available when Cachex is loaded at runtime.
+
+Key properties:
+- Only `{:ok, results}` are cached. Errors (validation, HTTP, service) always bypass the cache.
+- Cache key: `"vatchex:{afm_called_for}:{afm_called_by}"` — based on VAT IDs, not credentials.
+- Default TTL: 1 hour (configurable via `:cache_ttl` config).
+- Zero impact when not used: no extra dependencies, no application config required.
+
 ## Key Design Decisions
 
 1. **EEx template compiled at compile time** — `EEx.function_from_file/4` generates a `to_xml/5` function at compile time rather than interpreting the template on every request. This is faster and catches template errors at compile time.
@@ -177,6 +197,8 @@ This design means:
 5. **Structs → maps at the boundary** — Internal pipeline uses structs for pattern matching and compile-time guarantees. The public API returns plain maps via `mapize/1`, so callers are not coupled to the struct definitions.
 
 6. **All internal modules are `@moduledoc false`** — Only `VatchexGreece` and `FetchError` appear in generated documentation. The internal pipeline can be restructured without breaking public API contracts.
+
+7. **Optional caching via protocol** — A `VatchexGreece.Cache` protocol allows pluggable cache adapters. The provided `CachexCache` adapter uses Cachex v4.x and is conditionally compiled (only available when Cachex is loaded). Caching is opt-in via the `:cache` option; no dependency is forced on consumers.
 
 ## Dependencies
 

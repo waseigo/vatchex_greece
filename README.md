@@ -34,9 +34,30 @@ Returns a map with company information (onomasia, address, registration date, NA
 
 Refer to the [documentation on HexDocs](https://hexdocs.pm/vatchex_greece/VatchexGreece.html) for the full API reference.
 
-### Caching
+## Usage with caching
 
-Pass a `:cache` option to enable caching of successful lookups:
+Optional caching is available via [Cachex](https://hex.pm/packages/cachex) v4.x. Successful lookups are cached for a configurable TTL; errors are never cached.
+
+### Setup
+
+1. Add `cachex` to your dependencies:
+
+```elixir
+# mix.exs
+{:cachex, "~> 4.1"}
+```
+
+2. Start a Cachex instance in your supervision tree:
+
+```elixir
+# application.ex
+children = [
+  {Cachex, name: :vatchex_greece, limit: 10_000},
+  ...
+]
+```
+
+3. Pass the cache adapter to `fetch/1` or `fetch!/1`:
 
 ```elixir
 VatchexGreece.fetch(
@@ -48,7 +69,20 @@ VatchexGreece.fetch(
 )
 ```
 
-You must have a Cachex instance running in your supervision tree. See [hexdocs.pm/cachex](https://hexdocs.pm/cachex) for setup.
+### Configuration
+
+```elixir
+# config/config.exs
+config :vatchex_greece, :cache_name, :vatchex_greece  # Cachex cache name (default: :vatchex_greece)
+config :vatchex_greece, :cache_ttl, 3_600_000       # TTL in milliseconds (default: 1 hour)
+```
+
+### Behavior
+
+- Only successful results (`{:ok, data}`) are cached. Validation failures, HTTP errors, and service errors always hit the API.
+- Cache keys are based on the target and source VAT IDs, not credentials.
+- If Cachex is not started or not in the dependency list, the `:cache` option is silently ignored.
+- You can provide your own cache adapter by implementing the `VatchexGreece.Cache` protocol.
 
 ## Testing
 
