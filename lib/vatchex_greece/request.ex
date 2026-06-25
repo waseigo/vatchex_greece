@@ -45,38 +45,53 @@ defmodule VatchexGreece.Request do
   POST the XML request with proper headers to the SOAP web service.
   """
   @doc since: "0.5.0"
-  def post({:ok, %Results{request: xml, errors: errors} = input}) do
-    params = [
-      url: @gsis_endpoint_url,
-      method: :post,
-      body: xml
-    ]
-
+  def post({:ok, %Results{request: xml} = input}) do
     req =
-      params
+      [url: @gsis_endpoint_url, method: :post, body: xml]
       |> Req.new()
       |> Req.Request.put_header("Content-Type", "application/soap+xml")
       |> Req.Request.put_header("User-Agent", user_agent())
 
-    Logger.debug("Dispatching request to RgWsPublic2 SOAP API")
-    {_, %Req.Response{status: status} = response} = Req.Request.run_request(req)
-
-    if status == 200 do
-      handle_status_200(input, response)
-    else
-      message = "HTTP status code #{status} (not OK)"
-
-      errors =
-        Map.put(errors, :http_not_ok, message)
-
-      Logger.error("RgWsPublic2 SOAP API: #{message}")
-
-      {:error, %Results{input | response: response, errors: errors}}
-    end
+    execute_request(input, req)
   end
 
   def post({:error, input}) do
     {:error, input}
+  end
+
+  def do_post_with_request({:ok, %Results{} = input}, req) do
+    execute_request(input, req)
+  end
+
+  def do_post_with_request({:error, input}, _req), do: {:error, input}
+
+  defp execute_request(%Results{} = input, req) do
+    Logger.debug("Dispatching request to RgWsPublic2 SOAP API")
+
+    case Req.Request.run_request(req) do
+      {_req, %Req.Response{status: 200} = response} ->
+        handle_status_200(input, response)
+
+      {_req, %Req.Response{status: status} = response} ->
+        message = "HTTP status code #{status} (not OK)"
+
+        errors =
+          Map.put(input.errors, :http_not_ok, message)
+
+        Logger.error("RgWsPublic2 SOAP API: #{message}")
+
+        {:error, %Results{input | response: response, errors: errors}}
+
+      {_req, reason} ->
+        message = "Transport error: #{inspect(reason)}"
+
+        errors =
+          Map.put(input.errors, :http_not_ok, message)
+
+        Logger.error("RgWsPublic2 SOAP API: #{message}")
+
+        {:error, %Results{input | errors: errors}}
+    end
   end
 
   defp user_agent, do: Enum.join([client(), version()], "/")
