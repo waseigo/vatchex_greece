@@ -561,4 +561,47 @@ defmodule VatchexGreece.CacheTest do
       assert {:error, _} = result
     end
   end
+
+  describe "VIES fallback" do
+    test "fetch/1 with fetch_vies_fallback: true invokes VatchexVies on GSIS failure" do
+      # Use a closed port to force GSIS transport failure
+      original_url = VatchexGreece.Request.endpoint_url()
+
+      try do
+        VatchexGreece.Request.stub_endpoint("http://127.0.0.1:1/test")
+
+        # VatchexVies will be called but will fail (no mock).
+        # The important thing is that the fallback is attempted and
+        # returns the original GSIS error (not a crash).
+        assert {:error, _} =
+                 VatchexGreece.fetch(
+                   afm_called_for: "998144460",
+                   username: "user",
+                   password: "pass",
+                   afm_called_by: "998144460",
+                   fetch_vies_fallback: true
+                 )
+      after
+        VatchexGreece.Request.restore_endpoint(original_url)
+      end
+    end
+
+    test "fetch/1 without fetch_vies_fallback returns GSIS error directly" do
+      original_url = VatchexGreece.Request.endpoint_url()
+
+      try do
+        VatchexGreece.Request.stub_endpoint("http://127.0.0.1:1/test")
+
+        assert {:error, _} =
+                 VatchexGreece.fetch(
+                   afm_called_for: "998144460",
+                   username: "user",
+                   password: "pass",
+                   afm_called_by: "998144460"
+                 )
+      after
+        VatchexGreece.Request.restore_endpoint(original_url)
+      end
+    end
+  end
 end

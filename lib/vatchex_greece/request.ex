@@ -47,7 +47,7 @@ defmodule VatchexGreece.Request do
   @doc since: "0.5.0"
   def post({:ok, %Results{request: xml} = input}) do
     req =
-      [url: @gsis_endpoint_url, method: :post, body: xml]
+      [url: endpoint_url(), method: :post, body: xml]
       |> Req.new()
       |> Req.Request.put_header("Content-Type", "application/soap+xml")
       |> Req.Request.put_header("User-Agent", user_agent())
@@ -57,6 +57,21 @@ defmodule VatchexGreece.Request do
 
   def post({:error, input}) do
     {:error, input}
+  end
+
+  @doc false
+  def endpoint_url do
+    Application.get_env(:vatchex_greece, :gsis_endpoint_url, @gsis_endpoint_url)
+  end
+
+  @doc false
+  def stub_endpoint(url) do
+    Application.put_env(:vatchex_greece, :gsis_endpoint_url, url)
+  end
+
+  @doc false
+  def restore_endpoint(url) do
+    Application.put_env(:vatchex_greece, :gsis_endpoint_url, url)
   end
 
   def do_post_with_request({:ok, %Results{} = input}, req) do

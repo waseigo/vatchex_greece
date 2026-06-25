@@ -53,6 +53,7 @@ defmodule VatchexGreece.MixProject do
     [
       {:sweet_xml, "~> 0.7.3"},
       {:req, "~> 0.5"},
+      {:vatchex_vies, path: "../vatchex_vies", optional: true},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.40.3", only: :dev, runtime: false, warn_if_outdated: true}
     ]

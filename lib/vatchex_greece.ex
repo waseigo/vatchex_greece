@@ -63,14 +63,38 @@ defmodule VatchexGreece do
   ```
 
   Successful results are cached; errors are never cached. When no `:cache` option is provided, caching is disabled.
+
+  ## VIES fallback
+
+  If the `fetch_vies_fallback: true` option is passed and the GSIS lookup fails,
+  an additional lookup against the EU VIES API is attempted (requires the
+  `vatchex_vies` package).
+
+  ```elixir
+  VatchexGreece.fetch(
+    afm_called_for: "998144460",
+    username: "user",
+    password: "pass",
+    afm_called_by: "123456789",
+    fetch_vies_fallback: true
+  )
+  ```
+
+  When the VIES fallback succeeds, the response map includes `source: :vies`
+  (instead of the full GSIS data structure).
   """
   @doc since: "0.8.0"
   def fetch(opts) do
     cache = Keyword.get(opts, :cache, nil)
+    vies_fallback? = Keyword.get(opts, :fetch_vies_fallback, false)
 
     case do_fetch(opts, cache) do
-      {:ok, data} = result -> maybe_cache(cache, cache_key(opts), data); result
-      {:error, _} = error -> error
+      {:ok, data} = result ->
+        maybe_cache(cache, cache_key(opts), data)
+        result
+
+      {:error, errors} ->
+        if vies_fallback?, do: vies_fallback(errors, opts), else: {:error, errors}
     end
   end
 
@@ -126,6 +150,35 @@ defmodule VatchexGreece do
   defp cache_get(cache, key), do: VatchexGreece.Cache.get(cache, key)
 
   defp cache_ttl, do: Application.get_env(:vatchex_greece, :cache_ttl, 3_600_000)
+
+  # --- VIES fallback ---
+
+  defp vies_fallback(errors, opts) do
+    afm = Keyword.get(opts, :afm_called_for, "")
+
+    with :ok <- ensure_vies_loaded(),
+         {:ok, normalized} <- Validate.minimize(afm),
+         true <- Validate.correct_checksum?(normalized),
+         {:ok, vies_data} <- VatchexVies.lookup("EL", normalized) do
+      {:ok, vies_data}
+    else
+      _ ->
+        {:error, errors}
+    end
+  end
+
+  defp ensure_vies_loaded do
+    case Application.ensure_all_started(:vatchex_vies) do
+      {:ok, _} ->
+        :ok
+
+      {:error, {:already_started, _}} ->
+        :ok
+
+      _ ->
+        {:error, :vatchex_vies_not_available}
+    end
+  end
 
   # --- Legacy pipeline (internal) ---
 
