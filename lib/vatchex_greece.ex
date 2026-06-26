@@ -2,8 +2,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
 defmodule VatchexGreece do
-  require EEx
-
   @moduledoc """
   Client for the Greek GSIS RgWsPublic2 SOAP service (VAT / ΑΦΜ registry lookup).
 
@@ -94,7 +92,9 @@ defmodule VatchexGreece do
         result
 
       {:error, errors} ->
-        if vies_fallback?, do: vies_fallback(errors, opts), else: {:error, errors}
+        if vies_fallback?,
+          do: vies_fallback(errors, opts),
+          else: {:error, errors}
     end
   end
 
@@ -144,12 +144,15 @@ defmodule VatchexGreece do
   end
 
   defp maybe_cache(nil, _key, _data), do: :ok
-  defp maybe_cache(cache, key, data), do: VatchexGreece.Cache.put(cache, key, data, cache_ttl())
+
+  defp maybe_cache(cache, key, data),
+    do: VatchexGreece.Cache.put(cache, key, data, cache_ttl())
 
   defp cache_get(nil, _key), do: :miss
   defp cache_get(cache, key), do: VatchexGreece.Cache.get(cache, key)
 
-  defp cache_ttl, do: Application.get_env(:vatchex_greece, :cache_ttl, 3_600_000)
+  defp cache_ttl,
+    do: Application.get_env(:vatchex_greece, :cache_ttl, 3_600_000)
 
   # --- VIES fallback ---
 
@@ -157,7 +160,7 @@ defmodule VatchexGreece do
     afm = Keyword.get(opts, :afm_called_for, "")
 
     with :ok <- ensure_vies_loaded(),
-         {:ok, normalized} <- Validate.minimize(afm),
+         normalized <- Validate.minimize(afm),
          true <- Validate.correct_checksum?(normalized),
          {:ok, vies_data} <- VatchexVies.lookup("EL", normalized) do
       {:ok, vies_data}
