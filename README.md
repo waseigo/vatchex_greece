@@ -32,6 +32,23 @@ end
 
 Returns a map with company information (onomasia, address, registration date, NACE activities, etc.) or `{:error, errors}` with validation/service error details.
 
+## Error shape
+
+`fetch/1` and `fetch!/1` always return errors as `{:error, map}` with a consistent shape:
+
+```elixir
+{:error, %{code: <atom | string>, descr: <string>}}
+```
+
+| code | descr | meaning |
+|------|-------|---------|
+| `:invalid_vat` | `"Invalid target VAT ID: ..."` | VAT ID failed checksum/length check |
+| `:http_not_ok` | `"HTTP status code 500 (not OK)"` | Non-200 HTTP response |
+| `:transport_error` | `"Transport error: ..."` | Network failure (DNS, timeout, refused) |
+| `"1001"` | `"Λάθος στοιχεία πρόσβασης"` | GSIS service error (code from API) |
+
+Internal errors use atoms for `:code`. GSIS service errors use the string code returned by the API.
+
 Refer to the [documentation on HexDocs](https://hexdocs.pm/vatchex_greece/VatchexGreece.html) for the full API reference.
 
 ## Usage with caching
