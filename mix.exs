@@ -10,19 +10,11 @@ defmodule VatchexGreece.MixProject do
       description: description(),
       package: package(),
       deps: deps(),
-
-      # Docs
       name: "VatchexGreece",
       source_url: "https://github.com/waseigo/vatchex_greece",
       homepage_url: "https://overbring.com/software/vatchex_greece/",
-      docs: [
-        # The main page in the docs
-        main: "VatchexGreece",
-        logo: "./assets/logo.png",
-        extras: ["README.md"]
-        # Only the main VatchexGreece module is part of the public documented API.
-        # All other modules are internal implementation details (@moduledoc false).
-      ]
+      docs: docs(),
+      test_coverage: [summary: [threshold: 70]]
     ]
   end
 
@@ -44,7 +36,7 @@ defmodule VatchexGreece.MixProject do
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
-      extra_applications: [:eex]
+      extra_applications: [:eex, :logger]
     ]
   end
 
@@ -53,9 +45,21 @@ defmodule VatchexGreece.MixProject do
     [
       {:sweet_xml, "~> 0.7.3"},
       {:req, "~> 0.5"},
+      {:cachex, "~> 4.1", optional: true},
       {:vatchex_vies, path: "../vatchex_vies", optional: true},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.40.3", only: :dev, runtime: false, warn_if_outdated: true}
+    ]
+  end
+
+  defp docs do
+    [
+      # The main page in the docs
+      main: "VatchexGreece",
+      logo: "./assets/logo.png",
+      extras: ["README.md"]
+      # Only the main VatchexGreece module is part of the public documented API.
+      # All other modules are internal implementation details (@moduledoc false).
     ]
   end
 end

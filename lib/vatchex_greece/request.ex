@@ -88,22 +88,18 @@ defmodule VatchexGreece.Request do
         handle_status_200(input, response)
 
       {_req, %Req.Response{status: status} = response} ->
-        message = "HTTP status code #{status} (not OK)"
+        descr = "HTTP status code #{status} (not OK)"
+        errors = %{code: :http_not_ok, descr: descr}
 
-        errors =
-          Map.put(input.errors, :http_not_ok, message)
-
-        Logger.error("RgWsPublic2 SOAP API: #{message}")
+        Logger.error("RgWsPublic2 SOAP API: #{descr}")
 
         {:error, %Results{input | response: response, errors: errors}}
 
       {_req, reason} ->
-        message = "Transport error: #{inspect(reason)}"
+        descr = "Transport error: #{inspect(reason)}"
+        errors = %{code: :transport_error, descr: descr}
 
-        errors =
-          Map.put(input.errors, :http_not_ok, message)
-
-        Logger.error("RgWsPublic2 SOAP API: #{message}")
+        Logger.error("RgWsPublic2 SOAP API: #{descr}")
 
         {:error, %Results{input | errors: errors}}
     end

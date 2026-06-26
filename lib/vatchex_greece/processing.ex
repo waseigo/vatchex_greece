@@ -141,7 +141,8 @@ defmodule VatchexGreece.Processing do
     }
 
     if service_error do
-      errors = Map.put(input.errors || %{}, :service_error, service_error)
+      errors = Map.put(input.errors || %{}, :code, service_error.code)
+      errors = Map.put(errors, :descr, service_error.descr)
       {:error, %Results{input | data: data_struct, errors: errors}}
     else
       {:ok, %Results{input | data: data_struct}}

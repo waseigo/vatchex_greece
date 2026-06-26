@@ -22,6 +22,7 @@ defmodule VatchexGreece.TransportErrorTest do
       |> Req.Request.put_header("User-Agent", "VatchexGreece/1.1.0")
 
     assert {:error, %Results{errors: errors}} = Request.do_post_with_request({:ok, results}, req)
-    assert errors[:http_not_ok] =~ ~r/Transport error/
+    assert errors[:code] == :transport_error
+    assert errors[:descr] =~ ~r/Transport error/
   end
 end

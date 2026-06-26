@@ -217,34 +217,22 @@ defmodule VatchexGreece.Validate do
       [false, false] ->
         errors =
           errors
-          |> Map.put(
-            :validity_source,
-            "The source VAT ID #{afm_called_by} is not valid"
-          )
-          |> Map.put(
-            :validity_target,
-            "The target VAT ID #{afm_called_for} is not valid"
-          )
+          |> Map.put(:code, :invalid_vat)
+          |> Map.put(:descr, "Invalid VAT IDs: source=#{afm_called_by}, target=#{afm_called_for}")
 
         {:error, %Results{input | errors: errors}}
 
       [false, true] ->
         errors =
-          Map.put(
-            errors,
-            :validity_source,
-            "The source VAT ID #{afm_called_by} is not valid"
-          )
+          Map.put(%{}, :code, :invalid_vat)
+          |> Map.put(:descr, "Invalid source VAT ID: #{afm_called_by}")
 
         {:error, %Results{input | errors: errors}}
 
       [true, false] ->
         errors =
-          Map.put(
-            errors,
-            :validity_target,
-            "The target VAT ID #{afm_called_for} is not valid"
-          )
+          Map.put(%{}, :code, :invalid_vat)
+          |> Map.put(:descr, "Invalid target VAT ID: #{afm_called_for}")
 
         {:error, %Results{input | errors: errors}}
 

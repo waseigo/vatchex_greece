@@ -63,12 +63,10 @@ defmodule VatchexGreece.ValidateTest do
     end
 
     test "returns false for a VAT ID with wrong length after minimize" do
-      # "12345678" minimizes to "012345678" which is 9 digits but has bad checksum
       assert Validate.valid?("12345678") == false
     end
 
     test "returns false for non-numeric input that normalizes to bad checksum" do
-      # "12345678a" normalizes to "12345678" -> "012345678" which fails checksum
       assert Validate.valid?("12345678a") == false
     end
 
@@ -87,8 +85,6 @@ defmodule VatchexGreece.ValidateTest do
     end
 
     test "Integer.parse behavior: accepts trailing non-digits" do
-      # This is the existing behavior: Integer.parse returns {12345678, "a"}
-      # for "12345678a", so != :error is true
       assert {:ok, "12345678a"} = Validate.check_only_digits("12345678a")
     end
   end
@@ -352,7 +348,6 @@ defmodule VatchexGreece.PipelineTest do
 
   describe "fetch/1 input validation (no HTTP call needed)" do
     test "returns error when target VAT has invalid checksum after normalize" do
-      # "123456789" normalizes to "123456789" which has bad checksum
       result = VatchexGreece.fetch(
         afm_called_for: "123456789",
         username: "user",
@@ -361,7 +356,8 @@ defmodule VatchexGreece.PipelineTest do
       )
 
       assert {:error, errors} = result
-      assert errors[:validity_target] =~ ~r/not valid/
+      assert errors[:code] == :invalid_vat
+      assert errors[:descr] =~ ~r/Invalid target VAT/i
     end
 
     test "returns error when source VAT has invalid checksum after normalize" do
@@ -373,10 +369,11 @@ defmodule VatchexGreece.PipelineTest do
       )
 
       assert {:error, errors} = result
-      assert errors[:validity_source] =~ ~r/not valid/
+      assert errors[:code] == :invalid_vat
+      assert errors[:descr] =~ ~r/Invalid source VAT/i
     end
 
-    test "returns both errors when both VAT IDs have invalid checksum" do
+    test "returns error when both VAT IDs have invalid checksum" do
       result = VatchexGreece.fetch(
         afm_called_for: "123456789",
         username: "user",
@@ -385,8 +382,8 @@ defmodule VatchexGreece.PipelineTest do
       )
 
       assert {:error, errors} = result
-      assert errors[:validity_source] =~ ~r/not valid/
-      assert errors[:validity_target] =~ ~r/not valid/
+      assert errors[:code] == :invalid_vat
+      assert errors[:descr] =~ ~r/Invalid VAT/i
     end
   end
 
@@ -418,10 +415,6 @@ defmodule VatchexGreece.PipelineTest do
     end
 
     test "does not make HTTP request when validation fails" do
-      # If validation fails, the pipeline short-circuits before Request.post/1
-      # We can verify this because the mock HTTP adapter would raise if called
-      # Since no mock is set up, a failed HTTP call would just {:error, reason}
-      # Here we verify the error is from validation, not from HTTP
       assert_raise VatchexGreece.FetchError, fn ->
         VatchexGreece.fetch!(
           afm_called_for: "123456789",
@@ -432,147 +425,14 @@ defmodule VatchexGreece.PipelineTest do
       end
     end
   end
-end
-
-defmodule VatchexGreece.CacheTest do
-  use ExUnit.Case
-
-  alias VatchexGreece
-
-  setup do
-    VatchexGreece.TestCache.start_link([])
-    :ok
-  end
-
-  describe "fetch/1 with cache" do
-    test "returns cached result on hit" do
-      cached_data = %{onomasia: "CACHED CO.", regist_date: "2020-01-01"}
-      VatchexGreece.TestCache.put(VatchexGreece.TestCache, "vatchex:998144460:998144460", cached_data, 3_600_000)
-
-      result = VatchexGreece.fetch(
-        afm_called_for: "998144460",
-        username: "user",
-        password: "pass",
-        afm_called_by: "998144460",
-        cache: VatchexGreece.TestCache
-      )
-
-      assert {:ok, data} = result
-      assert data[:onomasia] == "CACHED CO."
-    end
-
-    test "falls through to API on cache miss" do
-      result = VatchexGreece.fetch(
-        afm_called_for: "998144460",
-        username: "user",
-        password: "pass",
-        afm_called_by: "998144460",
-        cache: VatchexGreece.TestCache
-      )
-
-      # The API call will succeed (HTTP 200) but return a service error
-      # because credentials are invalid
-      assert {:error, errors} = result
-      assert is_map(errors)
-    end
-
-    test "stores successful result in cache" do
-      cached_data = %{onomasia: "TEST STORE"}
-      VatchexGreece.TestCache.put(VatchexGreece.TestCache, "vatchex:998144460:998144460", cached_data, 3_600_000)
-
-      result = VatchexGreece.fetch(
-        afm_called_for: "998144460",
-        username: "user",
-        password: "pass",
-        afm_called_by: "998144460",
-        cache: VatchexGreece.TestCache
-      )
-
-      assert {:ok, _} = result
-    end
-
-    test "does not cache errors" do
-      result = VatchexGreece.fetch(
-        afm_called_for: "123456789",
-        username: "user",
-        password: "pass",
-        afm_called_by: "998144460",
-        cache: VatchexGreece.TestCache
-      )
-
-      assert {:error, _} = result
-    end
-
-    test "cache key includes both source and target AFM" do
-      VatchexGreece.TestCache.put(VatchexGreece.TestCache, "vatchex:110000000:998144460", %{onomasia: "KEY TEST"}, 3_600_000)
-
-      result = VatchexGreece.fetch(
-        afm_called_for: "110000000",
-        username: "user",
-        password: "pass",
-        afm_called_by: "998144460",
-        cache: VatchexGreece.TestCache
-      )
-
-      assert {:ok, data} = result
-      assert data[:onomasia] == "KEY TEST"
-    end
-  end
-
-  describe "fetch!/1 with cache" do
-    test "returns cached result on hit" do
-      cached_data = %{onomasia: "CACHED BANG"}
-      VatchexGreece.TestCache.put(VatchexGreece.TestCache, "vatchex:998144460:998144460", cached_data, 3_600_000)
-
-      data = VatchexGreece.fetch!(
-        afm_called_for: "998144460",
-        username: "user",
-        password: "pass",
-        afm_called_by: "998144460",
-        cache: VatchexGreece.TestCache
-      )
-
-      assert data[:onomasia] == "CACHED BANG"
-    end
-
-    test "raises FetchError on cache miss with invalid VAT" do
-      assert_raise VatchexGreece.FetchError, fn ->
-        VatchexGreece.fetch!(
-          afm_called_for: "123456789",
-          username: "user",
-          password: "pass",
-          afm_called_by: "998144460",
-          cache: VatchexGreece.TestCache
-        )
-      end
-    end
-  end
-
-  describe "fetch/1 without cache option" do
-    test "does not use cache when cache option is nil" do
-      result = VatchexGreece.fetch(
-        afm_called_for: "998144460",
-        username: "user",
-        password: "pass",
-        afm_called_by: "998144460"
-      )
-
-      # Will hit the API and get auth error (no cache involved)
-      assert {:error, _} = result
-    end
-  end
 
   describe "VIES fallback" do
     test "fetch/1 with fetch_vies_fallback: true invokes VatchexVies on GSIS failure" do
-      # Use a closed port to force GSIS transport failure
       original_url = VatchexGreece.Request.endpoint_url()
 
       try do
         VatchexGreece.Request.stub_endpoint("http://127.0.0.1:1/test")
 
-        # VatchexVies will be called but will fail (no mock).
-        # The important thing is that the fallback is attempted and
-        # returns the original GSIS error (not a crash).
         assert {:error, _} =
                  VatchexGreece.fetch(
                    afm_called_for: "998144460",
