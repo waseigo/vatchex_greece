@@ -151,12 +151,12 @@ Step 5 — mapize (in fetch/1)
 
 Errors are accumulated in the `%Results.errors` map as `:key => description` pairs. Each pipeline step only proceeds if errors is empty. Error keys used:
 
-| Key                | Source           | Meaning                                       |
-| ------------------ | ---------------- | --------------------------------------------- |
-| `:validity_source` | Validate         | `afm_called_by` failed checksum/length check  |
-| `:validity_target` | Validate         | `afm_called_for` failed checksum/length check |
-| `:http_not_ok`     | Request.post     | Non-200 HTTP response                         |
-| `:service_error`   | Processing.parse | GSIS returned an `error_rec` in the SOAP body |
+| Key                              | Source           | Meaning                                       |
+| -------------------------------- | ---------------- | --------------------------------------------- |
+| `%{code: :invalid_vat, descr:}`  | Validate         | Source or target VAT ID failed validation     |
+| `%{code: :http_not_ok, descr:}`  | Request.post     | Non-200 HTTP response                         |
+| `%{code: :transport_error, descr:}` | Request.post  | Network failure (DNS, timeout, refused)       |
+| `%{code: "1001", descr:}`        | Processing.parse | GSIS returned an `error_rec` in the SOAP body |
 
 This design means:
 

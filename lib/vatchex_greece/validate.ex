@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2023 Isaak Tsalicoglou <isaak@waseigo.com>
+# SPDX-FileCopyrightText: 2026 Isaak Tsalicoglou <isaak@waseigo.com>
 # SPDX-License-Identifier: Apache-2.0
 
 defmodule VatchexGreece.Validate do

@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2023 Isaak Tsalicoglou <isaak@waseigo.com>
+# SPDX-FileCopyrightText: 2026 Isaak Tsalicoglou <isaak@waseigo.com>
 # SPDX-License-Identifier: Apache-2.0
 
 defmodule VatchexGreece.Prettify do
@@ -20,7 +20,6 @@ defmodule VatchexGreece.Prettify do
 
   Transparently passes through `{:error, reason}` tuples unchanged.
   """
-  @spec pretty({:ok, map()} | {:error, term()}) :: {:ok, map()} | {:error, term()}
   def pretty({:error, reason}), do: {:error, reason}
 
   def pretty({:ok, data}) when is_map(data) do

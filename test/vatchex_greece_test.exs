@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2023 Isaak Tsalicoglou <isaak@waseigo.com>
+# SPDX-FileCopyrightText: 2026 Isaak Tsalicoglou <isaak@waseigo.com>
 # SPDX-License-Identifier: Apache-2.0
 
 defmodule VatchexGreeceTest do
@@ -346,48 +346,185 @@ defmodule VatchexGreece.PipelineTest do
 
   alias VatchexGreece
 
-  describe "fetch/1 input validation (no HTTP call needed)" do
-    test "returns error when target VAT has invalid checksum after normalize" do
-      result = VatchexGreece.fetch(
-        afm_called_for: "123456789",
-        username: "user",
-        password: "pass",
-        afm_called_by: "998144460"
-      )
+  @sample_response ~s"""
+  <?xml version="1.0" encoding="UTF-8"?>
+  <env:Envelope xmlns:env="http://www.w3.org/2003/05/soap-envelope">
+    <env:Body>
+      <rgWsPublic2AfmMethodResponse>
+        <result>
+          <onomasia>ΟΝΟΜΑΣΙΑ ΕΤΑΙΡΕΙΑΣ</onomasia>
+          <commer_title>ΕΜΠΟΡΙΚΟΣ ΤΙΤΛΟΣ</commer_title>
+          <legal_status_descr>ΑΕ</legal_status_descr>
+          <postal_address>ΟΔΟΣ</postal_address>
+          <postal_address_no>10</postal_address_no>
+          <postal_zip_code>12345</postal_zip_code>
+          <postal_area_description>ΠΕΡΙΟΧΗ</postal_area_description>
+          <regist_date>2020-01-01</regist_date>
+          <stop_date></stop_date>
+          <doy>123</doy>
+          <doy_descr>ΔΟΥ ΠΕΡΙΟΧΗΣ</doy_descr>
+          <i_ni_flag_descr>ΕΝΕΡΓΗ</i_ni_flag_descr>
+          <deactivation_flag>0</deactivation_flag>
+          <deactivation_flag_descr></deactivation_flag_descr>
+          <firm_flag_descr>ΠΡΟΪΣΤΑΜΕΝΗ</firm_flag_descr>
+          <normal_vat_system_flag>N</normal_vat_system_flag>
+          <as_on_date>2026-06-25</as_on_date>
+          <item>
+            <firm_act_code>47110001</firm_act_code>
+            <firm_act_descr>47110001 - Λιανική εμπορία τροφίμων</firm_act_descr>
+            <firm_act_kind>1</firm_act_kind>
+            <firm_act_kind_descr>ΚΥΡΙΑ</firm_act_kind_descr>
+          </item>
+          <item>
+            <firm_act_code>47120002</firm_act_code>
+            <firm_act_descr>47120002 - Λιανική εμπορία ποτών</firm_act_descr>
+            <firm_act_kind>2</firm_act_kind>
+            <firm_act_kind_descr>ΔΕΥΤΕΡΕΥΟΥΣΑ</firm_act_kind_descr>
+          </item>
+        </result>
+      </rgWsPublic2AfmMethodResponse>
+    </env:Body>
+  </env:Envelope>
+  """
 
-      assert {:error, errors} = result
+  @error_response ~s"""
+  <?xml version="1.0" encoding="UTF-8"?>
+  <env:Envelope xmlns:env="http://www.w3.org/2003/05/soap-envelope">
+    <env:Body>
+      <rgWsPublic2AfmMethodResponse>
+        <result>
+          <error_code>1001</error_code>
+          <error_descr>Λάθος στοιχεία πρόσβασης</error_descr>
+        </result>
+      </rgWsPublic2AfmMethodResponse>
+    </env:Body>
+  </env:Envelope>
+  """
+
+  @gsis_path "/wsaade/RgWsPublic2/RgWsPublic2"
+  @vies_path "/taxation_customs/vies/rest-api/check-vat-number"
+
+  setup do
+    # Ensure TestCache agent is started for cache tests
+    {:ok, _pid} = start_supervised(VatchexGreece.TestCache)
+    :ok
+  end
+
+  describe "fetch/1" do
+    test "returns company data for valid VAT" do
+      Req.Test.stub(:gsis, fn conn ->
+        conn
+        |> Plug.Conn.put_resp_header("content-type", "application/soap+xml")
+        |> Plug.Conn.resp(200, @sample_response)
+      end)
+
+      assert {:ok, result} =
+               VatchexGreece.fetch(
+                 afm_called_for: "998144460",
+                 username: "user",
+                 password: "pass",
+                 afm_called_by: "998144460",
+                 test_adapter: {Req.Test, :gsis}
+               )
+
+      assert result[:onomasia] == "ΟΝΟΜΑΣΙΑ ΕΤΑΙΡΕΙΑΣ"
+      assert result[:activities] |> length() == 2
+    end
+
+    test "returns error when target VAT has invalid checksum" do
+      assert {:error, errors} =
+               VatchexGreece.fetch(
+                 afm_called_for: "123456789",
+                 username: "user",
+                 password: "pass",
+                 afm_called_by: "998144460"
+               )
+
       assert errors[:code] == :invalid_vat
       assert errors[:descr] =~ ~r/Invalid target VAT/i
     end
 
-    test "returns error when source VAT has invalid checksum after normalize" do
-      result = VatchexGreece.fetch(
-        afm_called_for: "998144460",
-        username: "user",
-        password: "pass",
-        afm_called_by: "123456789"
-      )
+    test "returns error when source VAT has invalid checksum" do
+      assert {:error, errors} =
+               VatchexGreece.fetch(
+                 afm_called_for: "998144460",
+                 username: "user",
+                 password: "pass",
+                 afm_called_by: "123456789"
+               )
 
-      assert {:error, errors} = result
       assert errors[:code] == :invalid_vat
       assert errors[:descr] =~ ~r/Invalid source VAT/i
     end
 
     test "returns error when both VAT IDs have invalid checksum" do
-      result = VatchexGreece.fetch(
-        afm_called_for: "123456789",
-        username: "user",
-        password: "pass",
-        afm_called_by: "987654321"
-      )
+      assert {:error, errors} =
+               VatchexGreece.fetch(
+                 afm_called_for: "123456789",
+                 username: "user",
+                 password: "pass",
+                 afm_called_by: "987654321"
+               )
 
-      assert {:error, errors} = result
       assert errors[:code] == :invalid_vat
       assert errors[:descr] =~ ~r/Invalid VAT/i
     end
+
+    test "returns error on transport failure" do
+      Req.Test.stub(:gsis, fn conn ->
+        Req.Test.transport_error(conn, :econnrefused)
+      end)
+
+      assert {:error, %{code: :transport_error, descr: descr}} =
+               VatchexGreece.fetch(
+                 afm_called_for: "998144460",
+                 username: "user",
+                 password: "pass",
+                 afm_called_by: "998144460",
+                 test_adapter: {Req.Test, :gsis}
+               )
+
+      assert descr =~ ~r/Transport error/i
+    end
+
+    test "returns error on HTTP 500" do
+      Req.Test.stub(:gsis, fn conn ->
+        conn
+        |> Plug.Conn.put_resp_header("content-type", "text/plain")
+        |> Plug.Conn.resp(500, "Server Error")
+      end)
+
+      assert {:error, %{code: :http_not_ok, descr: descr}} =
+               VatchexGreece.fetch(
+                 afm_called_for: "998144460",
+                 username: "user",
+                 password: "pass",
+                 afm_called_by: "998144460",
+                 test_adapter: {Req.Test, :gsis}
+               )
+
+      assert descr =~ ~r/HTTP status code 500/
+    end
+
+    test "returns service error from GSIS error_rec" do
+      Req.Test.stub(:gsis, fn conn ->
+        conn
+        |> Plug.Conn.put_resp_header("content-type", "application/soap+xml")
+        |> Plug.Conn.resp(200, @error_response)
+      end)
+
+      assert {:error, %{code: "1001", descr: "Λάθος στοιχεία πρόσβασης"}} =
+               VatchexGreece.fetch(
+                 afm_called_for: "998144460",
+                 username: "wrong",
+                 password: "wrong",
+                 afm_called_by: "998144460",
+                 test_adapter: {Req.Test, :gsis}
+               )
+    end
   end
 
-  describe "fetch!/1 with invalid input" do
+  describe "fetch!/1" do
     test "raises FetchError on invalid VAT input" do
       assert_raise VatchexGreece.FetchError, ~r/Errors during fetch/, fn ->
         VatchexGreece.fetch!(
@@ -427,41 +564,132 @@ defmodule VatchexGreece.PipelineTest do
   end
 
   describe "VIES fallback" do
-    test "fetch/1 with fetch_vies_fallback: true invokes VatchexVies on GSIS failure" do
-      original_url = VatchexGreece.Request.endpoint_url()
+    @vies_success_response %{
+      countryCode: "EL",
+      vatNumber: "998144460",
+      valid: true,
+      name: "VIES FALLBACK CO",
+      tradingName: nil,
+      address: "VIA 1, ATHENS"
+    }
 
-      try do
-        VatchexGreece.Request.stub_endpoint("http://127.0.0.1:1/test")
+    test "returns VIES data when GSIS fails and VIES succeeds" do
+      http_stub = fn conn ->
+        case conn.request_path do
+          @gsis_path ->
+            Plug.Conn.resp(conn, 500, "GSIS Error")
 
-        assert {:error, _} =
-                 VatchexGreece.fetch(
-                   afm_called_for: "998144460",
-                   username: "user",
-                   password: "pass",
-                   afm_called_by: "998144460",
-                   fetch_vies_fallback: true
-                 )
-      after
-        VatchexGreece.Request.restore_endpoint(original_url)
+          @vies_path ->
+            conn
+            |> Plug.Conn.put_resp_header("content-type", "application/json")
+            |> Plug.Conn.resp(200, Jason.encode!(@vies_success_response))
+        end
       end
+
+      Req.Test.stub(:http, http_stub)
+
+      assert {:ok, result} =
+               VatchexGreece.fetch(
+                 afm_called_for: "998144460",
+                 username: "user",
+                 password: "pass",
+                 afm_called_by: "998144460",
+                 fetch_vies_fallback: true,
+                 test_adapter: {Req.Test, :http}
+               )
+
+      assert result[:source] == :vies
+      assert result[:onomasia] == "VIES FALLBACK CO"
+      assert result[:afm] == "998144460"
     end
 
-    test "fetch/1 without fetch_vies_fallback returns GSIS error directly" do
-      original_url = VatchexGreece.Request.endpoint_url()
+    test "returns GSIS error when VIES fallback fails" do
+      http_stub = fn conn ->
+        case conn.request_path do
+          @gsis_path ->
+            Plug.Conn.resp(conn, 500, "GSIS Error")
 
-      try do
-        VatchexGreece.Request.stub_endpoint("http://127.0.0.1:1/test")
-
-        assert {:error, _} =
-                 VatchexGreece.fetch(
-                   afm_called_for: "998144460",
-                   username: "user",
-                   password: "pass",
-                   afm_called_by: "998144460"
-                 )
-      after
-        VatchexGreece.Request.restore_endpoint(original_url)
+          @vies_path ->
+            conn
+            |> Plug.Conn.put_resp_header("content-type", "application/json")
+            |> Plug.Conn.resp(200, Jason.encode!(%{valid: false}))
+        end
       end
+
+      Req.Test.stub(:http, http_stub)
+
+      assert {:error, %{code: :http_not_ok}} =
+               VatchexGreece.fetch(
+                 afm_called_for: "998144460",
+                 username: "user",
+                 password: "pass",
+                 afm_called_by: "998144460",
+                 fetch_vies_fallback: true,
+                 test_adapter: {Req.Test, :http}
+               )
+    end
+
+    test "returns GSIS error directly when fallback not enabled" do
+      Req.Test.stub(:gsis, fn conn ->
+        Plug.Conn.resp(conn, 500, "GSIS Error")
+      end)
+
+      assert {:error, %{code: :http_not_ok}} =
+               VatchexGreece.fetch(
+                 afm_called_for: "998144460",
+                 username: "user",
+                 password: "pass",
+                 afm_called_by: "998144460",
+                 test_adapter: {Req.Test, :gsis}
+               )
+    end
+  end
+
+  describe "caching" do
+    test "caches successful results via TestCache" do
+      Req.Test.stub(:gsis, fn conn ->
+        conn
+        |> Plug.Conn.put_resp_header("content-type", "application/soap+xml")
+        |> Plug.Conn.resp(200, @sample_response)
+      end)
+
+      opts = [
+        afm_called_for: "998144460",
+        username: "user",
+        password: "pass",
+        afm_called_by: "998144460",
+        cache: VatchexGreece.TestCache,
+        test_adapter: {Req.Test, :gsis}
+      ]
+
+      assert {:ok, result} = VatchexGreece.fetch(opts)
+      assert {:ok, ^result} = VatchexGreece.fetch(opts)
+    end
+
+    test "does not cache errors" do
+      Req.Test.stub(:gsis, fn conn ->
+        Plug.Conn.resp(conn, 500, "Server Error")
+      end)
+
+      opts = [
+        afm_called_for: "998144460",
+        username: "user",
+        password: "pass",
+        afm_called_by: "998144460",
+        cache: VatchexGreece.TestCache,
+        test_adapter: {Req.Test, :gsis}
+      ]
+
+      assert {:error, _} = VatchexGreece.fetch(opts)
+
+      # After the error, cache should be empty — second call hits API again
+      Req.Test.stub(:gsis, fn conn ->
+        conn
+        |> Plug.Conn.put_resp_header("content-type", "application/soap+xml")
+        |> Plug.Conn.resp(200, @sample_response)
+      end)
+
+      assert {:ok, _} = VatchexGreece.fetch(opts)
     end
   end
 end

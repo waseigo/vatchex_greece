@@ -111,9 +111,25 @@ mix test
 
 ## What's new
 
-**v1.1.0** — Optional `pretty: true` mode reshapes fetch results into a more ergonomic form (combined postal address, `:afm_full`, `:is_active`, `:year_founded`, split primary/secondary activities). Optional Cachex caching and VIES fallback.
+**v1.1.0** — Optional `pretty: true` mode, Cachex caching, VIES fallback, `Req.Test` adapters, truly optional Cachex, `vatchex_vies` from Hex, `llms.txt`, coverage threshold 80%.
 
 See [CHANGELOG.md](CHANGELOG.md) for the full release history.
+
+## llms.txt
+
+This project includes an `llms.txt` file at the project root — a self-contained summary of the library's API surface for AI assistants and code generation tools. See the [llmstxt.org](https://llmstxt.org) specification for details.
+
+## Support
+
+If this library saves you time or helps your project, consider saying thanks by purchasing a copy of [**Northwind Elixir Traders**](https://leanpub.com/northwind-elixir-traders), an exploratory-learning book that teaches Elixir, Ecto, and SQLite all in one hands-on project, with its [source code](https://github.com/waseigo/northwind_elixir_traders) released under the Apache-2.0 License.
+
+<a href="https://leanpub.com/northwind-elixir-traders">
+  <img src="https://raw.githubusercontent.com/waseigo/northwind_elixir_traders/main/etc/northwind-elixir-traders-cover.jpg"
+       width="200"
+       alt="Northwind Elixir Traders cover">
+</a>
+
+See what readers are saying on the [book's ElixirForum thread](https://elixirforum.com/t/northwind-elixir-traders-pragprog/70887).
 
 ## Documentation
 

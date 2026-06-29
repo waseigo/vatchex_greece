@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2023 Isaak Tsalicoglou <isaak@waseigo.com>
+# SPDX-FileCopyrightText: 2026 Isaak Tsalicoglou <isaak@waseigo.com>
 # SPDX-License-Identifier: Apache-2.0
 
 if Code.ensure_loaded?(Cachex) do
@@ -32,10 +32,5 @@ if Code.ensure_loaded?(Cachex) do
     end
 
     defp cache_ttl, do: Application.get_env(:vatchex_greece, :cache_ttl, 3_600_000)
-  end
-
-  defimpl VatchexGreece.Cache, for: VatchexGreece.CachexCache do
-    def get(cache, key), do: VatchexGreece.CachexCache.get(cache, key)
-    def put(cache, key, value, ttl), do: VatchexGreece.CachexCache.put(cache, key, value, ttl)
   end
 end

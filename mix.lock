@@ -36,4 +36,5 @@
   "telemetry": {:hex, :telemetry, "1.4.2", "a0cb522801dffb1c49fe6e30561badffc7b6d0e180db1300df759faa22062855", [:rebar3], [], "hexpm", "928f6495066506077862c0d1646609eed891a4326bee3126ba54b60af61febb1"},
   "unicode_util_compat": {:hex, :unicode_util_compat, "0.7.0", "bc84380c9ab48177092f43ac89e4dfa2c6d62b40b8bd132b1059ecc7232f9a78", [:rebar3], [], "hexpm", "25eee6d67df61960cf6a794239566599b09e17e668d3700247bc498638152521"},
   "unsafe": {:hex, :unsafe, "1.0.2", "23c6be12f6c1605364801f4b47007c0c159497d0446ad378b5cf05f1855c0581", [:mix], [], "hexpm", "b485231683c3ab01a9cd44cb4a79f152c6f3bb87358439c6f68791b85c2df675"},
+  "vatchex_vies": {:hex, :vatchex_vies, "1.0.0", "913e3661d99d044f54d53954dbc633c64e8329593ec8247bf0f48e6e6bb9d065", [:mix], [{:jason, "~> 1.4", [hex: :jason, repo: "hexpm", optional: false]}, {:req, "~> 0.5", [hex: :req, repo: "hexpm", optional: false]}], "hexpm", "c179ea8dc90c12fb718b9298f1d71e18eff88ddea94719aab1b0e052aa8ff329"},
 }

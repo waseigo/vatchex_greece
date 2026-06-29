@@ -1,0 +1,132 @@
+# VatchexGreece v1.1.0
+
+Client for the Greek GSIS RgWsPublic2 SOAP web service (VAT / ΑΦΜ registry lookup).
+
+Not affiliated with GSIS or the Greek Ministry of Finance.
+
+## Installation
+
+Add to mix.exs:
+```elixir
+{:vatchex_greece, "~> 1.1"}
+```
+
+Runtime dependencies: sweet_xml, req.
+
+Optional dependencies: cachex (for caching), vatchex_vies (for VIES fallback).
+
+## Public API
+
+### VatchexGreece.fetch/1
+
+```elixir
+VatchexGreece.fetch(opts)
+```
+
+Looks up a Greek VAT ID via the GSIS SOAP API.
+
+**Required options:**
+- `:afm_called_for` — target VAT ID to query (string, with or without "EL" prefix, 8 or 9 digits)
+- `:username` — GSIS token username
+- `:password` — GSIS special access code
+- `:afm_called_by` — caller's VAT ID (or delegator's)
+
+**Optional options:**
+- `:cache` — module implementing `VatchexGreece.Cache` protocol (e.g., `VatchexGreece.CachexCache`)
+- `:fetch_vies_fallback` — if `true`, attempts EU VIES lookup when GSIS fails (requires `vatchex_vies`)
+- `:pretty` — if `true`, reshapes the result map ergonomically
+- `:test_adapter` — `{Req.Test, module}` tuple for test stubbing
+
+### VatchexGreece.fetch!/1
+
+Same as `fetch/1` but returns data directly or raises `VatchexGreece.FetchError`.
+
+### Response (on success)
+
+```elixir
+{:ok,
+ %{
+   afm: "998144460",
+   onomasia: "ΕΠΩΝΥΜΙΑ ΕΤΑΙΡΕΙΑΣ",
+   commer_title: "ΕΜΠΟΡΙΚΟΣ ΤΙΤΛΟΣ",
+   legal_status_descr: "ΑΕ",
+   postal_address: "ΟΔΟΣ",
+   postal_address_no: "10",
+   postal_zip_code: "12345",
+   postal_area_description: "ΠΕΡΙΟΧΗ",
+   regist_date: "2020-01-01",
+   stop_date: nil,
+   doy: "123",
+   doy_descr: "ΔΟΥ ΠΕΡΙΟΧΗΣ",
+   i_ni_flag_descr: "ΕΝΕΡΓΗ",
+   deactivation_flag: "0",
+   deactivation_flag_descr: nil,
+   firm_flag_descr: "ΠΡΟΪΣΤΑΜΕΝΗ",
+   normal_vat_system_flag: "N",
+   as_on_date: "2026-06-25",
+   activities: [
+     %{code: "47110001", prio: 1, descr: "- description", prio_text: "ΚΥΡΙΑ"},
+     %{code: "47120002", prio: 2, descr: "- description", prio_text: "ΔΕΥΤΕΡΕΥΟΥΣΑ"}
+   ],
+   source: :gsis
+ }}
+```
+
+When `pretty: true`, the response is reshaped: `:afm_full` (EL prefix), `:postal_address` becomes `%{street_address:, raw:}`, `:is_active` boolean, `:year_founded` integer, `:activities` becomes `%{primary:, secondary:}`.
+
+When the VIES fallback succeeds, the response includes `source: :vies` with a subset of fields.
+
+### Error shape
+
+```elixir
+{:error, %{code: atom | String.t(), descr: String.t()}}
+```
+
+| code | descr | meaning |
+|---|---|---|
+| `:invalid_vat` | `"Invalid target VAT ID: ..."` | VAT ID failed checksum/length check |
+| `:http_not_ok` | `"HTTP status code 500 (not OK)"` | Non-200 HTTP response from GSIS |
+| `:transport_error` | `"Transport error: ..."` | Network failure (DNS, timeout, refused) |
+| `"1001"` | `"Λάθος στοιχεία πρόσβασης"` | GSIS service error (string code from API) |
+
+Internal errors use atom codes. GSIS service errors use the string code from the API response.
+
+## Authentication
+
+1. Sign up at the [wspublicreg service](https://www1.aade.gr/webtax/wspublicreg/faces/pages/wspublicreg/menu.xhtml) using TAXISnet credentials.
+2. Create special access codes through the [token services console](https://www1.aade.gr/sgsisapps/tokenservices/protected/displayConsole.htm).
+
+## Caching
+
+Optional via Cachex v4.x. Add `cachex` to your deps and pass `cache: VatchexGreece.CachexCache` to `fetch/1`.
+
+Configure:
+```elixir
+config :vatchex_greece, :cache_name, :vatchex_greece   # default
+config :vatchex_greece, :cache_ttl, 3_600_000            # 1 hour
+```
+
+Only successful results are cached. Errors never cache. Zero impact when Cachex is not in your deps.
+
+## VIES fallback
+
+When `fetch_vies_fallback: true` and GSIS returns an error, attempts `VatchexVies.lookup("EL", afm)`. Requires `vatchex_vies` to be in your dependencies. The VIES lookup is best-effort: if it fails, the original GSIS error is returned.
+
+## Testing
+
+```
+mix test
+```
+
+All tests use Req.Test stubs — no live service calls or GSIS credentials required.
+
+## VAT validation
+
+- Strips "EL"/"GR" prefix
+- Removes whitespace
+- Pads 8-digit IDs with leading zero
+- ISO 7064 (MOD 11,10) checksum verification
+
+## Internal modules
+
+All internal modules (`Validate`, `Request`, `Processing`, `GSISdata`, `NACEactivity`, `APIauth`, `Results`, `CachexCache`, `Prettify`) are `@moduledoc false` — not part of the public API.

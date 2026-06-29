@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2023 Isaak Tsalicoglou <isaak@waseigo.com>
+# SPDX-FileCopyrightText: 2026 Isaak Tsalicoglou <isaak@waseigo.com>
 # SPDX-License-Identifier: Apache-2.0
 
 defmodule VatchexGreece.TestCache do
@@ -21,12 +21,4 @@ defmodule VatchexGreece.TestCache do
   end
 end
 
-defimpl VatchexGreece.Cache, for: Atom do
-  def get(cache, key) do
-    apply(cache, :get, [cache, key])
-  end
 
-  def put(cache, key, value, ttl) do
-    apply(cache, :put, [cache, key, value, ttl])
-  end
-end

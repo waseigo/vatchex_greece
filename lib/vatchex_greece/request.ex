@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2023 Isaak Tsalicoglou <isaak@waseigo.com>
+# SPDX-FileCopyrightText: 2026 Isaak Tsalicoglou <isaak@waseigo.com>
 # SPDX-License-Identifier: Apache-2.0
 
 defmodule VatchexGreece.Request do
@@ -45,12 +45,13 @@ defmodule VatchexGreece.Request do
   POST the XML request with proper headers to the SOAP web service.
   """
   @doc since: "0.5.0"
-  def post({:ok, %Results{request: xml} = input}) do
+  def post({:ok, %Results{request: xml, test_adapter: test_adapter} = input}) do
     req =
       [url: endpoint_url(), method: :post, body: xml]
       |> Req.new()
       |> Req.Request.put_header("Content-Type", "application/soap+xml")
       |> Req.Request.put_header("User-Agent", user_agent())
+      |> maybe_attach_adapter(test_adapter)
 
     execute_request(input, req)
   end
@@ -63,22 +64,6 @@ defmodule VatchexGreece.Request do
   def endpoint_url do
     Application.get_env(:vatchex_greece, :gsis_endpoint_url, @gsis_endpoint_url)
   end
-
-  @doc false
-  def stub_endpoint(url) do
-    Application.put_env(:vatchex_greece, :gsis_endpoint_url, url)
-  end
-
-  @doc false
-  def restore_endpoint(url) do
-    Application.put_env(:vatchex_greece, :gsis_endpoint_url, url)
-  end
-
-  def do_post_with_request({:ok, %Results{} = input}, req) do
-    execute_request(input, req)
-  end
-
-  def do_post_with_request({:error, input}, _req), do: {:error, input}
 
   defp execute_request(%Results{} = input, req) do
     Logger.debug("Dispatching request to RgWsPublic2 SOAP API")
@@ -118,6 +103,12 @@ defmodule VatchexGreece.Request do
     |> Macro.underscore()
     |> String.to_atom()
     |> Application.spec(:vsn)
+  end
+
+  defp maybe_attach_adapter(req, nil), do: req
+
+  defp maybe_attach_adapter(req, {Req.Test, _module} = adapter) do
+    Req.Request.merge_options(req, plug: adapter, retry: false)
   end
 
   # refactored function to avoid 3-levels-deep case handling in post/1

@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2023 Isaak Tsalicoglou <isaak@waseigo.com>
+# SPDX-FileCopyrightText: 2026 Isaak Tsalicoglou <isaak@waseigo.com>
 # SPDX-License-Identifier: Apache-2.0
 
 defmodule VatchexGreece do
@@ -85,8 +85,9 @@ defmodule VatchexGreece do
   def fetch(opts) do
     cache = Keyword.get(opts, :cache, nil)
     vies_fallback? = Keyword.get(opts, :fetch_vies_fallback, false)
+    test_adapter = Keyword.get(opts, :test_adapter)
 
-    case do_fetch(opts, cache) do
+    case do_fetch(opts, cache, test_adapter) do
       {:ok, data} = result ->
         maybe_cache(cache, cache_key(opts), data)
         result
@@ -116,7 +117,7 @@ defmodule VatchexGreece do
 
   # --- Caching ---
 
-  defp do_fetch(opts, cache) do
+  defp do_fetch(opts, cache, test_adapter) do
     afm_called_for = Keyword.get(opts, :afm_called_for)
     username = Keyword.get(opts, :username)
     password = Keyword.get(opts, :password)
@@ -128,7 +129,7 @@ defmodule VatchexGreece do
 
       :miss ->
         afm_called_for
-        |> build_initial_results(username, password, afm_called_by)
+        |> build_initial_results(username, password, afm_called_by, test_adapter)
         |> run()
         |> case do
           {:ok, %Results{data: data}} -> {:ok, mapize(data)}
@@ -158,11 +159,12 @@ defmodule VatchexGreece do
 
   defp vies_fallback(errors, opts) do
     afm = Keyword.get(opts, :afm_called_for, "")
+    test_adapter = Keyword.get(opts, :test_adapter)
 
     with :ok <- ensure_vies_loaded(),
          normalized <- Validate.minimize(afm),
          true <- Validate.correct_checksum?(normalized),
-         {:ok, vies_data} <- VatchexVies.lookup("EL", normalized) do
+         {:ok, vies_data} <- VatchexVies.lookup("EL", normalized, test_adapter: test_adapter) do
       {:ok, vies_data}
     else
       _ ->
@@ -185,14 +187,15 @@ defmodule VatchexGreece do
 
   # --- Legacy pipeline (internal) ---
 
-  defp build_initial_results(afm_called_for, username, password, afm_called_by) do
+  defp build_initial_results(afm_called_for, username, password, afm_called_by, test_adapter) do
     %Results{
       auth: %APIauth{
         username: username,
         password: password,
         afm_called_by: afm_called_by
       },
-      data: %GSISdata{afm: afm_called_for}
+      data: %GSISdata{afm: afm_called_for},
+      test_adapter: test_adapter
     }
   end
 

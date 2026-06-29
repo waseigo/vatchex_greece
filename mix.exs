@@ -14,7 +14,7 @@ defmodule VatchexGreece.MixProject do
       source_url: "https://github.com/waseigo/vatchex_greece",
       homepage_url: "https://overbring.com/software/vatchex_greece/",
       docs: docs(),
-      test_coverage: [summary: [threshold: 70]]
+      test_coverage: [summary: [threshold: 80]]
     ]
   end
 
@@ -26,7 +26,7 @@ defmodule VatchexGreece.MixProject do
 
   defp package do
     [
-      files: ["lib", "mix.exs", "README*", "LICENSE*"],
+      files: ["lib", "mix.exs", "README*", "LICENSE*", "llms.txt"],
       maintainers: ["Isaak Tsalicoglou"],
       licenses: ["Apache-2.0"],
       links: %{"GitHub" => "https://github.com/waseigo/vatchex_greece"}
@@ -45,8 +45,9 @@ defmodule VatchexGreece.MixProject do
     [
       {:sweet_xml, "~> 0.7.3"},
       {:req, "~> 0.5"},
-      {:cachex, "~> 4.1", optional: true},
-      {:vatchex_vies, path: "../vatchex_vies", optional: true},
+      {:cachex, "~> 4.1", only: [:dev, :test], runtime: false},
+      {:vatchex_vies, "~> 1.0", optional: true},
+      {:plug, "~> 1.4", only: :test, runtime: false},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.40.3", only: :dev, runtime: false, warn_if_outdated: true}
     ]
