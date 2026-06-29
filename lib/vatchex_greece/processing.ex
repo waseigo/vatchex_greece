@@ -129,6 +129,7 @@ defmodule VatchexGreece.Processing do
       |> List.delete(:__struct__)
       |> List.delete(:activities)
       |> List.delete(:address_collapsed)
+      |> List.delete(:is_active)
 
     data_map =
       strings_to_extract
@@ -139,7 +140,8 @@ defmodule VatchexGreece.Processing do
     data_struct = %{
       data_struct
       | activities: extract_activities(body),
-        address_collapsed: collapse_address(data_struct)
+        address_collapsed: collapse_address(data_struct),
+        is_active: is_nil(data_struct.stop_date)
     }
 
     if service_error do

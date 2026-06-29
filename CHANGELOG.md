@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-06-30
+
+### Added
+
+- `is_active` boolean field in the response map — `true` when `stop_date` is nil (company appears active), `false` when `stop_date` contains a date string.
+
 ## [1.1.1] - 2026-06-30
 
 ### Added
@@ -129,7 +135,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Renamed `Processing` module (disambiguated from OTP `Process`).
 - Removed dependency on values in `config.exs`.
 
-[Unreleased]: https://github.com/tisaak/vatchex_greece/compare/v1.1.1...HEAD
+[Unreleased]: https://github.com/tisaak/vatchex_greece/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/tisaak/vatchex_greece/compare/v1.1.1...v1.2.0
 [1.1.1]: https://github.com/tisaak/vatchex_greece/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/tisaak/vatchex_greece/compare/v1.0.1...v1.1.0
 [1.0.1]: https://github.com/tisaak/vatchex_greece/compare/v1.0.0...v1.0.1

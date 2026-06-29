@@ -1,4 +1,4 @@
-# VatchexGreece v1.1.1
+# VatchexGreece v1.2.0
 
 Client for the Greek GSIS RgWsPublic2 SOAP web service (VAT / ΑΦΜ registry lookup).
 
@@ -51,6 +51,7 @@ Same as `fetch/1` but returns data directly or raises `VatchexGreece.FetchError`
    commer_title: "ΕΜΠΟΡΙΚΟΣ ΤΙΤΛΟΣ",
    legal_status_descr: "ΑΕ",
     address_collapsed: "ΟΔΟΣ 10 12345 ΠΕΡΙΟΧΗ",
+    is_active: true,
     postal_address: "ΟΔΟΣ",
     postal_address_no: "10",
     postal_zip_code: "12345",
@@ -73,7 +74,7 @@ Same as `fetch/1` but returns data directly or raises `VatchexGreece.FetchError`
  }}
 ```
 
-When `pretty: true`, the response is reshaped: `:afm_full` (EL prefix), `:postal_address` becomes `%{street_address:, raw:}`, `:is_active` boolean, `:year_founded` integer, `:activities` becomes `%{primary:, secondary:}`.
+When `pretty: true`, the response is reshaped: `:afm_full` (EL prefix), `:postal_address` becomes `%{street_address:, raw:}`, `:year_founded` integer, `:activities` becomes `%{primary:, secondary:}`.
 
 When the VIES fallback succeeds, the response includes `source: :vies` with a subset of fields.
 

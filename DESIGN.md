@@ -92,6 +92,7 @@ Struct holding the query target and all response fields. Keys match the XML elem
 - `:onomasia`, `:commer_title`, `:legal_status_descr` — company naming/legal status
 - `:postal_address`, `:postal_address_no`, `:postal_zip_code`, `:postal_area_description` — address (individual fields from GSIS)
 - `:address_collapsed` — single-line single-string version of the postal address (computed in `Processing.parse`)
+- `:is_active` — boolean derived from `stop_date` (computed in `Processing.parse`)
 - `:regist_date`, `:stop_date` — registration and cessation dates
 - `:doy`, `:doy_descr` — tax office code and description
 - `:i_ni_flag_descr`, `:deactivation_flag`, `:deactivation_flag_descr`, `:firm_flag_descr`, `:normal_vat_system_flag` — status flags
@@ -143,7 +144,8 @@ Step 4 — Processing.parse
   ├─ extract_activities(body) → [%NACEactivity{}, ...]
   ├─ parse_kad/1 fixup if needed
   ├─ collapse_address/1 → single-line address string (nil if empty)
-  └─ Result: {:ok, %Results{data: %GSISdata{address_collapsed: ..., ...}}}
+  ├─ is_active?/1 → boolean (true if stop_date is nil)
+  └─ Result: {:ok, %Results{data: %GSISdata{address_collapsed: ..., is_active: ..., ...}}}
 
 Step 5 — mapize (in fetch/1)
   └─ %Results{data: data} → {:ok, %{onomasia: "...", ...}}

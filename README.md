@@ -107,9 +107,11 @@ config :vatchex_greece, :cache_ttl, 3_600_000       # TTL in milliseconds (defau
 mix test
 ```
 
-85 unit tests, no external dependencies or live service calls. Covers VAT ID validation, XML response parsing, SOAP envelope generation, pipeline error handling, caching behavior, pretty result reshaping, address\_collapsed, and VIES fallback.
+86 unit tests, no external dependencies or live service calls. Covers VAT ID validation, XML response parsing, SOAP envelope generation, pipeline error handling, caching behavior, pretty result reshaping, address\_collapsed, is\_active, and VIES fallback.
 
 ## What's new
+
+**v1.2.0** — `is_active` boolean in the response map — `true` when `stop_date` is nil, `false` when `stop_date` has a date.
 
 **v1.1.1** — `address_collapsed` field in the response map — single-line single-string version of the postal address.
 

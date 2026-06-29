@@ -4,7 +4,7 @@ defmodule VatchexGreece.MixProject do
   def project do
     [
       app: :vatchex_greece,
-      version: "1.1.1",
+      version: "1.2.0",
       elixir: "~> 1.14",
       start_permanent: Mix.env() == :prod,
       description: description(),

@@ -24,6 +24,7 @@ defmodule VatchexGreece.GSISdata do
     :stop_date,
     :normal_vat_system_flag,
     :address_collapsed,
+    :is_active,
     activities: []
   ]
 end
