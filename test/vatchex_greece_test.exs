@@ -429,6 +429,7 @@ defmodule VatchexGreece.PipelineTest do
 
       assert result[:onomasia] == "ΟΝΟΜΑΣΙΑ ΕΤΑΙΡΕΙΑΣ"
       assert result[:activities] |> length() == 2
+      assert result[:address_collapsed] == "ΟΔΟΣ 10 12345 ΠΕΡΙΟΧΗ"
     end
 
     test "returns error when target VAT has invalid checksum" do
@@ -504,6 +505,39 @@ defmodule VatchexGreece.PipelineTest do
                )
 
       assert descr =~ ~r/HTTP status code 500/
+    end
+
+    test "returns nil address_collapsed when no postal fields in response" do
+      minimal_response = ~s"""
+      <?xml version="1.0" encoding="UTF-8"?>
+      <env:Envelope xmlns:env="http://www.w3.org/2003/05/soap-envelope">
+        <env:Body>
+          <rgWsPublic2AfmMethodResponse>
+            <result>
+              <onomasia>ONLY NAME</onomasia>
+            </result>
+          </rgWsPublic2AfmMethodResponse>
+        </env:Body>
+      </env:Envelope>
+      """
+
+      Req.Test.stub(:gsis, fn conn ->
+        conn
+        |> Plug.Conn.put_resp_header("content-type", "application/soap+xml")
+        |> Plug.Conn.resp(200, minimal_response)
+      end)
+
+      assert {:ok, result} =
+               VatchexGreece.fetch(
+                 afm_called_for: "998144460",
+                 username: "user",
+                 password: "pass",
+                 afm_called_by: "998144460",
+                 test_adapter: {Req.Test, :gsis}
+               )
+
+      assert result[:onomasia] == "ONLY NAME"
+      assert result[:address_collapsed] == nil
     end
 
     test "returns service error from GSIS error_rec" do

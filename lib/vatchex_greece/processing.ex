@@ -128,6 +128,7 @@ defmodule VatchexGreece.Processing do
       |> Map.keys()
       |> List.delete(:__struct__)
       |> List.delete(:activities)
+      |> List.delete(:address_collapsed)
 
     data_map =
       strings_to_extract
@@ -137,7 +138,8 @@ defmodule VatchexGreece.Processing do
 
     data_struct = %{
       data_struct
-      | activities: extract_activities(body)
+      | activities: extract_activities(body),
+        address_collapsed: collapse_address(data_struct)
     }
 
     if service_error do
@@ -151,5 +153,19 @@ defmodule VatchexGreece.Processing do
 
   def parse({:error, input}) do
     {:error, input}
+  end
+
+  defp collapse_address(%{postal_address: nil, postal_address_no: nil, postal_zip_code: nil, postal_area_description: nil}), do: nil
+
+  defp collapse_address(data) do
+    [data.postal_address, data.postal_address_no, data.postal_zip_code, data.postal_area_description]
+    |> Enum.map(&to_string/1)
+    |> Enum.map(&String.trim/1)
+    |> Enum.reject(&(&1 == ""))
+    |> Enum.join(" ")
+    |> case do
+      "" -> nil
+      s -> s
+    end
   end
 end

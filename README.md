@@ -14,7 +14,7 @@ by adding `vatchex_greece` to your list of dependencies in `mix.exs`.
 ```elixir
 def deps do
   [
-    {:vatchex_greece, "~> 1.1"},
+    {:vatchex_greece, "~> 1.1"},  # or "~> 1.1.1" for the latest patch
   ]
 end
 ```
@@ -107,9 +107,11 @@ config :vatchex_greece, :cache_ttl, 3_600_000       # TTL in milliseconds (defau
 mix test
 ```
 
-84 unit tests, no external dependencies or live service calls. Covers VAT ID validation, XML response parsing, SOAP envelope generation, pipeline error handling, caching behavior, pretty result reshaping, and VIES fallback.
+85 unit tests, no external dependencies or live service calls. Covers VAT ID validation, XML response parsing, SOAP envelope generation, pipeline error handling, caching behavior, pretty result reshaping, address\_collapsed, and VIES fallback.
 
 ## What's new
+
+**v1.1.1** — `address_collapsed` field in the response map — single-line single-string version of the postal address.
 
 **v1.1.0** — Optional `pretty: true` mode, Cachex caching, VIES fallback, `Req.Test` adapters, truly optional Cachex, `vatchex_vies` from Hex, `llms.txt`, coverage threshold 80%.
 

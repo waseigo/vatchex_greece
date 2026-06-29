@@ -1,4 +1,4 @@
-# VatchexGreece v1.1.0
+# VatchexGreece v1.1.1
 
 Client for the Greek GSIS RgWsPublic2 SOAP web service (VAT / ΑΦΜ registry lookup).
 
@@ -8,7 +8,7 @@ Not affiliated with GSIS or the Greek Ministry of Finance.
 
 Add to mix.exs:
 ```elixir
-{:vatchex_greece, "~> 1.1"}
+{:vatchex_greece, "~> 1.1"}   # or "~> 1.1.1" for the latest patch
 ```
 
 Runtime dependencies: sweet_xml, req.
@@ -50,10 +50,11 @@ Same as `fetch/1` but returns data directly or raises `VatchexGreece.FetchError`
    onomasia: "ΕΠΩΝΥΜΙΑ ΕΤΑΙΡΕΙΑΣ",
    commer_title: "ΕΜΠΟΡΙΚΟΣ ΤΙΤΛΟΣ",
    legal_status_descr: "ΑΕ",
-   postal_address: "ΟΔΟΣ",
-   postal_address_no: "10",
-   postal_zip_code: "12345",
-   postal_area_description: "ΠΕΡΙΟΧΗ",
+    address_collapsed: "ΟΔΟΣ 10 12345 ΠΕΡΙΟΧΗ",
+    postal_address: "ΟΔΟΣ",
+    postal_address_no: "10",
+    postal_zip_code: "12345",
+    postal_area_description: "ΠΕΡΙΟΧΗ",
    regist_date: "2020-01-01",
    stop_date: nil,
    doy: "123",

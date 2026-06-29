@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1] - 2026-06-30
+
+### Added
+
+- `address_collapsed` field in the response map — single-line single-string version of the postal address, collapsed from the individual `postal_address`/`postal_address_no`/`postal_zip_code`/`postal_area_description` fields.
+
 ## [1.1.0] - 2026-06-29
 
 ### Added
@@ -123,7 +129,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Renamed `Processing` module (disambiguated from OTP `Process`).
 - Removed dependency on values in `config.exs`.
 
-[Unreleased]: https://github.com/tisaak/vatchex_greece/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/tisaak/vatchex_greece/compare/v1.1.1...HEAD
+[1.1.1]: https://github.com/tisaak/vatchex_greece/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/tisaak/vatchex_greece/compare/v1.0.1...v1.1.0
 [1.0.1]: https://github.com/tisaak/vatchex_greece/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/tisaak/vatchex_greece/compare/v0.8.1...v1.0.0

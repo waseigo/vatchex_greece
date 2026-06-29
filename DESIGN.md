@@ -90,7 +90,8 @@ Struct holding the query target and all response fields. Keys match the XML elem
 - `:afm` — the queried VAT ID (as provided)
 - `:as_on_date` — date the lookup was performed
 - `:onomasia`, `:commer_title`, `:legal_status_descr` — company naming/legal status
-- `:postal_address`, `:postal_address_no`, `:postal_zip_code`, `:postal_area_description` — address
+- `:postal_address`, `:postal_address_no`, `:postal_zip_code`, `:postal_area_description` — address (individual fields from GSIS)
+- `:address_collapsed` — single-line single-string version of the postal address (computed in `Processing.parse`)
 - `:regist_date`, `:stop_date` — registration and cessation dates
 - `:doy`, `:doy_descr` — tax office code and description
 - `:i_ni_flag_descr`, `:deactivation_flag`, `:deactivation_flag_descr`, `:firm_flag_descr`, `:normal_vat_system_flag` — status flags
@@ -141,7 +142,8 @@ Step 4 — Processing.parse
   ├─ extract_string(body, field) for each GSISdata field
   ├─ extract_activities(body) → [%NACEactivity{}, ...]
   ├─ parse_kad/1 fixup if needed
-  └─ Result: {:ok, %Results{data: %GSISdata{...}}}
+  ├─ collapse_address/1 → single-line address string (nil if empty)
+  └─ Result: {:ok, %Results{data: %GSISdata{address_collapsed: ..., ...}}}
 
 Step 5 — mapize (in fetch/1)
   └─ %Results{data: data} → {:ok, %{onomasia: "...", ...}}
@@ -257,7 +259,7 @@ Caching is strictly optional. If `cache: nil` (default) or Cachex is not loaded,
 mix test
 ```
 
-56 tests, no external dependencies. The suite covers:
+85 tests, no external dependencies. The suite covers:
 
 - **Validate** — VAT ID normalization (`EL`/`GR` prefix stripping, 8→9 digit padding, whitespace removal), ISO 7064 checksum validation
 - **Processing** — XML response parsing (`extract_string`, `extract_error`, `extract_activities`), KAD field fixup (`parse_kad`)
