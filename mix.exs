@@ -26,7 +26,7 @@ defmodule VatchexGreece.MixProject do
 
   defp package do
     [
-      files: ["lib", "mix.exs", "README*", "LICENSE*", "llms.txt"],
+      files: ["lib", "mix.exs", "README*", "LICENSE*", "TELEMETRY.md", "llms.txt"],
       maintainers: ["Isaak Tsalicoglou"],
       licenses: ["Apache-2.0"],
       links: %{"GitHub" => "https://github.com/waseigo/vatchex_greece"}
@@ -58,7 +58,7 @@ defmodule VatchexGreece.MixProject do
       # The main page in the docs
       main: "VatchexGreece",
       logo: "./assets/logo.png",
-      extras: ["README.md"]
+      extras: ["README.md", "TELEMETRY.md"]
       # Only the main VatchexGreece module is part of the public documented API.
       # All other modules are internal implementation details (@moduledoc false).
     ]
