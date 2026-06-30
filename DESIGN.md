@@ -8,25 +8,43 @@ The public API is two functions: `fetch/1` (returns `{:ok, map}` / `{:error, map
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                      Public API                             │
-│  fetch/1  ──►  build_initial_results  ──►  run/1  ──► map   │
-│  fetch!/1 ──►  case fetch/1  ──►  raise FetchError on err   │
-└──────────────────────────┬──────────────────────────────────┘
-                           │
-         ┌─────────────────┼─────────────────┐
-         ▼                 ▼                 ▼
-   ┌──────────┐    ┌──────────────┐   ┌────────────┐
-   │ Validate │───►│   Request    │──►│ Processing │
-   │ (VAT ID) │    │(SOAP envelope│   │ (XML parse)│
-   │          │    │  + HTTP POST)│   │            │
-   └──────────┘    └──────────────┘   └────────────┘
-         │                 │                 │
-         ▼                 ▼                 ▼
-   %Results{}        %Results{}         %Results{}
-   + errors          + request          + data
-                     + response         (or errors)
+```mermaid
+flowchart TB
+    subgraph API["Public API"]
+        F["fetch/1 → build_initial_results → run/1"]
+        FB["fetch!/1 → raises FetchError on error"]
+    end
+
+    BR["build_initial_results<br/>%Results{%APIauth{}, %GSISdata{}}"]
+    V["Validate<br/>minimize + ISO 7064 checksum"]
+    RP["Request.prepare<br/>SOAP envelope (EEx template)"]
+    RQ["Request.post<br/>HTTP POST to GSIS"]
+    PP["Processing.parse<br/>XML parse (SweetXml)"]
+    MZ["mapize<br/>structs → plain maps"]
+    ERR["{:error, errors}"]
+    OK["{:ok, data}"]
+
+    API --> BR
+    BR --> V
+    V -->|valid| RP
+    V -->|invalid| ERR
+    RP --> RQ
+    RQ -->|HTTP 200| PP
+    RQ -->|HTTP error| ERR
+    PP -->|service error| ERR
+    PP -->|success| MZ
+    MZ --> OK
+
+    subgraph ACC["%Results{} accumulator"]
+        R1["+ errors"]
+        R2["+ request, + response"]
+        R3["+ data"]
+    end
+
+    V -.-> R1
+    RP -.-> R2
+    RQ -.-> R2
+    PP -.-> R3
 ```
 
 ### The `%Results{}` Accumulator
@@ -117,38 +135,42 @@ Exception raised by `fetch!/1`. Fields: `:message` (human-readable) and `:errors
 
 ## Data Flow — End to End
 
-```
-Input:  afm_called_for: "123456789"
-        username: "my_user"
-        password: "my_pass"
-        afm_called_by: "987654321"
+```mermaid
+flowchart TB
+    subgraph Step1["Step 1 — Validate"]
+        V1["minimize(987654321) → valid"]
+        V2["minimize(123456789) → valid"]
+    end
 
-Step 1 — Validate
-  ├─ minimize("987654321") → "987654321"  (valid)
-  ├─ minimize("123456789") → "123456789"  (valid)
-  └─ Result: {:ok, %Results{}}
+    subgraph Step2["Step 2 — Request.prepare"]
+        RP1["as_on_date = today"]
+        RP2["to_xml(creds, afms, date)<br/>→ SOAP envelope XML"]
+    end
 
-Step 2 — Request.prepare
-  ├─ as_on_date = "2026-06-25"
-  ├─ to_xml(...) → SOAP envelope XML string
-  └─ Result: {:ok, %Results{request: xml}}
+    subgraph Step3["Step 3 — Request.post"]
+        RQ["POST to gsis.gr<br/>with XML body"]
+        RQ_OK["HTTP 200 → {:ok, %Results{response: resp}}"]
+        RQ_ERR["HTTP 500 → {:error, %Results{errors}}"]
+    end
 
-Step 3 — Request.post
-  ├─ POST to gsis.gr with XML body
-  ├─ HTTP 200 → {:ok, %Results{response: resp}}
-  └─ HTTP 500 → {:error, %Results{errors: %{http_not_ok: ...}}}
+    subgraph Step4["Step 4 — Processing.parse"]
+        P1["extract_error(body) → nil or %{code, descr}"]
+        P2["extract_string for each GSISdata field"]
+        P3["extract_activities → [%NACEactivity{}]"]
+        P4["parse_kad fixup"]
+        P5["collapse_address → single-line string"]
+        P6["is_active? → boolean"]
+    end
 
-Step 4 — Processing.parse
-  ├─ extract_error(body) → nil (or %{code, descr})
-  ├─ extract_string(body, field) for each GSISdata field
-  ├─ extract_activities(body) → [%NACEactivity{}, ...]
-  ├─ parse_kad/1 fixup if needed
-  ├─ collapse_address/1 → single-line address string (nil if empty)
-  ├─ is_active?/1 → boolean (true if stop_date is nil)
-  └─ Result: {:ok, %Results{data: %GSISdata{address_collapsed: ..., is_active: ..., ...}}}
+    subgraph Step5["Step 5 — mapize"]
+        MZ["%Results{data: data} → {:ok, %{onomasia: ..., ...}}"]
+    end
 
-Step 5 — mapize (in fetch/1)
-  └─ %Results{data: data} → {:ok, %{onomasia: "...", ...}}
+    Step1 -->|"{:ok, %Results{}}"| Step2 --> Step3
+    Step3 -->|HTTP 200| Step4
+    Step3 -->|error| ERR1["{:error, errors}"]
+    Step4 -->|success| Step5
+    Step4 -->|service error| ERR2["{:error, errors}"]
 ```
 
 ## Error Handling Strategy
@@ -170,14 +192,24 @@ This design means:
 
 ## Caching
 
-```
-fetch/1
-  ├── cache hit? → return cached result
-  ├── Validate
-  ├── Request.prepare
-  ├── Request.post
-  ├── Processing.parse
-  └── store in cache (if success) → return
+```mermaid
+flowchart LR
+    F["fetch/1"]
+    C{"Cache hit?"}
+    V["Validate"]
+    R["Request.prepare"]
+    P["Request.post"]
+    X["Processing.parse"]
+    S["Store in cache"]
+    DONE["Return {:ok, data}"]
+    ERR["Return {:error, errors}"]
+
+    F --> C
+    C -->|yes| DONE
+    C -->|no| V --> R --> P --> X
+    X -->|success| S --> DONE
+    X -->|error| ERR
+    P -->|HTTP error| ERR
 ```
 
 Caching is implemented via the `VatchexGreece.Cache` protocol, allowing pluggable adapters. The built-in `VatchexGreece.CachexCache` adapter wraps Cachex v4.x and is conditionally compiled — it is only available when Cachex is loaded at runtime.
